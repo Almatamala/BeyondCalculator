@@ -1,22 +1,80 @@
-import { useRouter } from 'expo-router';
+import { useRef } from "react";
+import { Button, Text, View } from "react-native";
 
-import ModeSelector from '@/components/calculator/ModeSelector';
-import SlideContainer from '@/components/SlideContainer';
-import { useCalculator } from '@/context/CalculatorContext';
-import { Mode } from '@/types/calculator';
+import GlassSelector from "@/components/calculator/GlassSelector";
+import ModeSelector from "@/components/calculator/ModeSelector";
+import PersonList from "@/components/calculator/PersonList";
+import ResultCard from "@/components/calculator/ResultCard";
+import SlideContainer, { Slide, SlideContainerRef } from "@/components/SlideContainer";
+import { useCalculator } from "@/context/CalculatorContext";
+import { Mode } from "@/types/calculator";
+import { calculateResults } from "@/utils/calculations";
 
-export default function HomeSlide() {
-  const { setMode } = useCalculator();
-  const router = useRouter();
+export default function CalculatorScreen() {
+  const pagerRef = useRef<SlideContainerRef>(null);
 
-  const handleSelect = (mode: Mode) => {
+  const {
+    state,
+    setMode,
+    addPerson,
+    removePerson,
+    setPersonName,
+    setPersonLevel,
+    setPeopleCount,
+    setGlassType,
+    reset,
+  } = useCalculator();
+
+  const results = calculateResults(state);
+
+  const handleModeSelect = (mode: Mode) => {
     setMode(mode);
-    router.push('/calculator/people');
+    pagerRef.current?.scrollTo(1);
   };
 
-  return (
-    <SlideContainer question="How is everyone drinking tonight?">
-      <ModeSelector onSelect={handleSelect} />
-    </SlideContainer>
-  );
+  const slides: Slide[] = [
+    {
+      question: "¿Tomarán todos lo mismo?",
+      content: <ModeSelector onSelect={handleModeSelect} />,
+    },
+    {
+      question: "¿Quién está tomando?",
+      content:
+        state.mode === "personalized" ? (
+          <PersonList
+            people={state.people}
+            onAdd={addPerson}
+            onRemove={removePerson}
+            onNameChange={setPersonName}
+            onLevelChange={setPersonLevel}
+          />
+        ) : (
+          <View style={{ gap: 12 }}>
+            {/* TODO: replace with a styled stepper component */}
+            <Text>Personas: {state.peopleCount}</Text>
+            <Button
+              title="-"
+              onPress={() => setPeopleCount(Math.max(1, state.peopleCount - 1))}
+            />
+            <Button title="+" onPress={() => setPeopleCount(state.peopleCount + 1)} />
+          </View>
+        ),
+    },
+    {
+      question: "¿Qué vaso están usando?",
+      content: <GlassSelector value={state.glassType} onChange={setGlassType} />,
+    },
+    {
+      question: "Esto es lo que necesitan",
+      content: (
+        <View style={{ gap: 16 }}>
+          <ResultCard label="Licor" valueMl={results.liquorMl} />
+          <ResultCard label="Soda" valueMl={results.sodaMl} />
+          <Button title="Empezar de nuevo" onPress={reset} />
+        </View>
+      ),
+    },
+  ];
+
+  return <SlideContainer ref={pagerRef} slides={slides} />;
 }

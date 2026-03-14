@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 interface Props {
   total: number;
@@ -7,13 +7,16 @@ interface Props {
 }
 
 export default function SlideProgress({ total, current }: Props) {
-  // TODO: style dots — filled for completed/current, outlined for upcoming
   return (
     <View style={styles.row}>
       {Array.from({ length: total }).map((_, i) => (
         <View
           key={i}
-          style={[styles.dot, i === current && styles.dotActive]}
+          style={[
+            styles.dot,
+            i === current && styles.dotActive,
+            i < current && styles.dotDone,
+          ]}
         />
       ))}
     </View>
@@ -23,16 +26,19 @@ export default function SlideProgress({ total, current }: Props) {
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    justifyContent: 'center',
     gap: 8,
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#ccc',
+    backgroundColor: 'rgba(255, 255, 255, 0.35)',
+  },
+  dotDone: {
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
   },
   dotActive: {
-    backgroundColor: '#000',
+    width: 24,           // active dot stretches into a pill
+    backgroundColor: '#F5A623',   // warm amber from the image palette
   },
 });

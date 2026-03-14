@@ -1,10 +1,10 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React from "react";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import { GLASS_LABELS } from '@/constants/drinks';
-import { GlassType } from '@/types/calculator';
+import { GLASS_CONFIG } from "@/constants/drinks";
+import { GlassType } from "@/types/calculator";
 
-const GLASSES: GlassType[] = ['highball', 'rocks', 'shot', 'pint'];
+const GLASSES = Object.keys(GLASS_CONFIG) as GlassType[];
 
 interface Props {
   value: GlassType | null;
@@ -12,44 +12,71 @@ interface Props {
 }
 
 export default function GlassSelector({ value, onChange }: Props) {
-  // TODO: style as visual cards, add glass icons/illustrations
   return (
-    <View style={styles.grid}>
-      {GLASSES.map(glass => (
-        <TouchableOpacity
-          key={glass}
-          style={[styles.card, value === glass && styles.cardActive]}
-          onPress={() => onChange(glass)}
-        >
-          <Text style={[styles.label, value === glass && styles.labelActive]}>
-            {GLASS_LABELS[glass]}
-          </Text>
-        </TouchableOpacity>
-      ))}
+    <View style={styles.row}>
+      {GLASSES.map(glass => {
+        const config = GLASS_CONFIG[glass];
+        const active = value === glass;
+        return (
+          <TouchableOpacity
+            key={glass}
+            style={[styles.card, active && styles.cardActive]}
+            onPress={() => onChange(glass)}
+            activeOpacity={0.8}
+          >
+            <Image
+              source={config.image}
+              style={[styles.image, !active && styles.imageInactive]}
+              resizeMode="contain"
+            />
+            <Text style={[styles.label, active && styles.labelActive]}>{config.label}</Text>
+            <Text style={[styles.ml, active && styles.mlActive]}>{config.ml} ml</Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  grid: {
+  row: {
+    flexDirection: "row",
     gap: 12,
   },
   card: {
+    flex: 1,
+    alignItems: "center",
     padding: 16,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 12,
-    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: "#e0e0e0",
+    borderRadius: 18,
+    gap: 8,
+    backgroundColor: "#fafafa",
   },
   cardActive: {
-    borderColor: '#000',
-    backgroundColor: '#000',
+    borderColor: "#F5A623",
+    backgroundColor: "#fff8ee",
+  },
+  image: {
+    width: 90,
+    height: 110,
+  },
+  imageInactive: {
+    opacity: 0.6,
   },
   label: {
-    fontSize: 16,
-    color: '#333',
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#555",
   },
   labelActive: {
-    color: '#fff',
+    color: "#F5A623",
+  },
+  ml: {
+    fontSize: 12,
+    color: "#aaa",
+  },
+  mlActive: {
+    color: "#F5A623",
   },
 });

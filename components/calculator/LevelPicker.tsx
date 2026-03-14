@@ -1,10 +1,16 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState } from "react";
+import {
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-import { LEVEL_LABELS } from '@/constants/drinks';
-import { DrinkLevel } from '@/types/calculator';
+import { LEVEL_LABELS } from "@/constants/drinks";
+import { DrinkLevel } from "@/types/calculator";
 
-const LEVELS: DrinkLevel[] = ['light', 'moderate', 'heavy'];
+const LEVELS: DrinkLevel[] = ["algo piola", "normal", "'algo piola'"];
 
 interface Props {
   value: DrinkLevel;
@@ -12,46 +18,86 @@ interface Props {
 }
 
 export default function LevelPicker({ value, onChange }: Props) {
-  // TODO: style as a segmented control with branded colors
+  const [open, setOpen] = useState(false);
+
   return (
-    <View style={styles.row}>
-      {LEVELS.map(level => (
-        <TouchableOpacity
-          key={level}
-          style={[styles.option, value === level && styles.optionActive]}
-          onPress={() => onChange(level)}
-        >
-          <Text style={[styles.label, value === level && styles.labelActive]}>
-            {LEVEL_LABELS[level]}
-          </Text>
+    <>
+      <TouchableOpacity style={styles.select} onPress={() => setOpen(true)}>
+        <Text style={styles.selectText}>{LEVEL_LABELS[value]}</Text>
+        <Text style={styles.chevron}>▾</Text>
+      </TouchableOpacity>
+
+      <Modal transparent visible={open} animationType="fade" onRequestClose={() => setOpen(false)}>
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={() => setOpen(false)}>
+          <View style={styles.dropdown}>
+            {LEVELS.map(level => (
+              <TouchableOpacity
+                key={level}
+                style={[styles.option, value === level && styles.optionActive]}
+                onPress={() => { onChange(level); setOpen(false); }}
+              >
+                <Text style={[styles.optionText, value === level && styles.optionTextActive]}>
+                  {LEVEL_LABELS[level]}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </TouchableOpacity>
-      ))}
-    </View>
+      </Modal>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    gap: 8,
+  select: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "#fafafa",
+  },
+  selectText: {
+    fontSize: 14,
+    color: "#333",
+  },
+  chevron: {
+    fontSize: 16,
+    color: "#888",
+  },
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  dropdown: {
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    width: 220,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 10,
   },
   option: {
-    flex: 1,
-    padding: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
   },
   optionActive: {
-    borderColor: '#000',
-    backgroundColor: '#000',
+    backgroundColor: "#F5A623",
   },
-  label: {
-    fontSize: 13,
-    color: '#333',
+  optionText: {
+    fontSize: 15,
+    color: "#333",
   },
-  labelActive: {
-    color: '#fff',
+  optionTextActive: {
+    color: "#fff",
+    fontWeight: "600",
   },
 });

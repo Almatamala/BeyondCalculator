@@ -1,27 +1,19 @@
-import { DrinkLevel, GlassType } from '@/types/calculator';
+import { DrinkLevel, GlassType } from "@/types/calculator";
 
-export const GLASS_SIZES_ML: Record<GlassType, number> = {
-  highball: 350,
-  rocks: 250,
-  shot: 60,
-  pint: 500,
+export const LEVEL_LABELS: Record<DrinkLevel, string> = {
+  "algo piola":   "Algo piola",
+  "normal":       "Normal",
+  "'algo piola'": "Bien cargado",
 };
 
 export const LEVEL_RATIOS: Record<DrinkLevel, { liquor: number; soda: number }> = {
-  light:    { liquor: 0.2, soda: 0.8 },
-  moderate: { liquor: 0.3, soda: 0.7 },
-  heavy:    { liquor: 0.4, soda: 0.6 },
+  "algo piola":   { liquor: 0.2, soda: 0.8 },
+  "normal":       { liquor: 0.3, soda: 0.7 },
+  "'algo piola'": { liquor: 0.45, soda: 0.55 },
 };
 
-export const LEVEL_LABELS: Record<DrinkLevel, string> = {
-  light:    'Light',
-  moderate: 'Moderate',
-  heavy:    'Heavy',
-};
-
-export const GLASS_LABELS: Record<GlassType, string> = {
-  highball: 'Highball (350ml)',
-  rocks:    'Rocks (250ml)',
-  shot:     'Shot (60ml)',
-  pint:     'Pint (500ml)',
+// Single source of truth for glass types: label, volume, and image
+export const GLASS_CONFIG: Record<GlassType, { label: string; ml: number; image: any }> = {
+  vaso_rojo:   { label: "Vaso Rojo",   ml: 473, image: require("@/assets/images/vaso_rojo.webp") },
+  vaso_vidrio: { label: "Vaso Vidrio", ml: 350, image: require("@/assets/images/vaso_vidrio.webp") },
 };
