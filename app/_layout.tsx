@@ -8,10 +8,11 @@ import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 import "../global.css";
 
+import { CalculatorProvider } from "@/context/CalculatorContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export const unstable_settings = {
-  anchor: "(tabs)",
+  anchor: "calculator",
 };
 
 export default function RootLayout() {
@@ -19,14 +20,12 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="modal"
-          options={{ presentation: "modal", title: "Modal" }}
-        />
-      </Stack>
-      <StatusBar style="auto" />
+      <CalculatorProvider>
+        <Stack>
+          <Stack.Screen name="calculator" options={{ headerShown: false }} />
+        </Stack>
+        <StatusBar style="auto" />
+      </CalculatorProvider>
     </ThemeProvider>
   );
 }
