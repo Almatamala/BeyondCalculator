@@ -12,7 +12,8 @@ export interface Person {
 
 export interface CalculatorState {
   mode: Mode | null;
-  peopleCount: number; // used in 'same' mode
+  peopleCount: number; // used in 'same' 
+  drinksPerPerson: number; // used in 'same' mode
   people: Person[];    // used in 'personalized' mode
   glassType: GlassType | null;
 }

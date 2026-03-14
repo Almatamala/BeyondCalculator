@@ -21,6 +21,7 @@ export default function CalculatorScreen() {
     setPersonName,
     setPersonLevel,
     setPeopleCount,
+    setDrinksPerPerson,
     setGlassType,
     reset,
   } = useCalculator();
@@ -38,7 +39,7 @@ export default function CalculatorScreen() {
       content: <ModeSelector onSelect={handleModeSelect} />,
     },
     {
-      question: state.mode === "same" ? "¿Cuantas personas estan tomando?" : "¿Quien está tomando?",
+      question: "¿Cuanto tomaran?",
       content:
         state.mode === "personalized" ? (
           <PersonList
@@ -49,11 +50,26 @@ export default function CalculatorScreen() {
             onLevelChange={setPersonLevel}
           />
         ) : (
-          <View style={{ gap: 12, alignItems: 'center' }}>
-            <CountPicker
-            value={state.peopleCount}
-            onChange={setPeopleCount}
-          />
+          <View style={{ gap: 24, alignItems: 'center' }}>
+            <View style={{ gap: 8, alignItems: 'center' }}>
+              <Text style={{ fontSize: 15, fontWeight: '500', color: '#374151' }}>
+                ¿Cuántos weones son?
+              </Text>
+              <CountPicker
+                value={state.peopleCount}
+                onChange={setPeopleCount}
+              />
+            </View>
+
+            <View style={{ gap: 8, alignItems: 'center' }}>
+              <Text style={{ fontSize: 15, fontWeight: '500', color: '#374151' }}>
+                ¿Cuántos vasos tomara cada weon/a?
+              </Text>
+              <CountPicker
+                value={state.drinksPerPerson}
+                onChange={setDrinksPerPerson}
+              />
+            </View>
 
             <Text style={{ fontSize: 13, color: '#9CA3AF' }}>
               Toca el número para escribir directamente

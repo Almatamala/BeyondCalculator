@@ -27,7 +27,7 @@ export function calculateResults(state: CalculatorState): CalculationResult {
   // 'same' mode — use 'normal' as default level
   const ratio = LEVEL_RATIOS["normal"];
   return {
-    liquorMl: state.peopleCount * glassMl * ratio.liquor,
-    sodaMl:   state.peopleCount * glassMl * ratio.soda,
+    liquorMl: state.peopleCount * state.drinksPerPerson * glassMl * ratio.liquor,
+    sodaMl:   state.peopleCount * state.drinksPerPerson * glassMl * ratio.soda,
   };
 }

@@ -10,6 +10,7 @@ interface CalculatorContextValue {
   removePerson: (id: string) => void;
   setPersonName: (id: string, name: string) => void;
   setPersonLevel: (id: string, level: DrinkLevel) => void;
+  setDrinksPerPerson: (count: number) => void;
   setGlassType: (glass: GlassType) => void;
   reset: () => void;
 }
@@ -17,6 +18,7 @@ interface CalculatorContextValue {
 const initialState: CalculatorState = {
   mode: null,
   peopleCount: 1,
+  drinksPerPerson: 0,
   people: [],
   glassType: null,
 };
@@ -58,6 +60,9 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
       people: s.people.map(p => (p.id === id ? { ...p, level } : p)),
     }));
 
+  const setDrinksPerPerson = (count: number) =>
+    setState(s => ({ ...s, drinksPerPerson: count }));
+
   const setGlassType = (glassType: GlassType) =>
     setState(s => ({ ...s, glassType }));
 
@@ -73,6 +78,7 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
         removePerson,
         setPersonName,
         setPersonLevel,
+        setDrinksPerPerson,
         setGlassType,
         reset,
       }}
