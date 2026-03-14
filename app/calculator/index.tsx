@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { Button, Text, View } from "react-native";
+import { Button, Pressable, Text, TextInput, View } from "react-native";
 
 import GlassSelector from "@/components/calculator/GlassSelector";
 import ModeSelector from "@/components/calculator/ModeSelector";
@@ -38,7 +38,7 @@ export default function CalculatorScreen() {
       content: <ModeSelector onSelect={handleModeSelect} />,
     },
     {
-      question: "¿Quién está tomando?",
+      question: "¿Cuantas personas estan tomando?",
       content:
         state.mode === "personalized" ? (
           <PersonList
@@ -49,14 +49,69 @@ export default function CalculatorScreen() {
             onLevelChange={setPersonLevel}
           />
         ) : (
-          <View style={{ gap: 12 }}>
-            {/* TODO: replace with a styled stepper component */}
-            <Text>Personas: {state.peopleCount}</Text>
-            <Button
-              title="-"
-              onPress={() => setPeopleCount(Math.max(1, state.peopleCount - 1))}
-            />
-            <Button title="+" onPress={() => setPeopleCount(state.peopleCount + 1)} />
+          <View style={{ gap: 12, alignItems: 'center' }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                borderRadius: 12,
+                borderWidth: 1.5,
+                borderColor: '#D1D5DB',
+                overflow: 'hidden',
+                backgroundColor: '#F9FAFB',
+              }}
+            >
+              <Pressable
+                onPress={() => setPeopleCount(Math.max(1, state.peopleCount - 1))}
+                style={({ pressed }) => ({
+                  paddingHorizontal: 20,
+                  paddingVertical: 14,
+                  backgroundColor: pressed ? '#E5E7EB' : 'transparent',
+                })}
+              >
+                <Text style={{ fontSize: 35, fontWeight: '300', color: '#374151' }}> − </Text>
+              </Pressable>
+
+              <View style={{ width: 1, height: 28, backgroundColor: '#D1D5DB' }} />
+
+              <TextInput
+                value={String(state.peopleCount)}
+                onChangeText={(text) => {
+                  const num = parseInt(text, 10);
+                  if (!isNaN(num) && num >= 1) setPeopleCount(num);
+                  else if (text === '') setPeopleCount(1);
+                }}
+                keyboardType="number-pad"
+                selectTextOnFocus
+                style={{
+                  minWidth: 64,
+                  textAlign: 'center',
+                  fontSize: 20,
+                  fontWeight: '600',
+                  color: '#111827',
+                  paddingVertical: 14,
+                  paddingHorizontal: 8,
+                  backgroundColor: '#FFFFFF',
+                }}
+              />
+
+              <View style={{ width: 1, height: 28, backgroundColor: '#D1D5DB' }} />
+
+              <Pressable
+                onPress={() => setPeopleCount(state.peopleCount + 1)}
+                style={({ pressed }) => ({
+                  paddingHorizontal: 20,
+                  paddingVertical: 14,
+                  backgroundColor: pressed ? '#E5E7EB' : 'transparent',
+                })}
+              >
+                <Text style={{ fontSize: 35, fontWeight: '300', color: '#374151' }}> + </Text>
+              </Pressable>
+            </View>
+
+            <Text style={{ fontSize: 13, color: '#9CA3AF' }}>
+              Toca el número para escribir directamente
+            </Text>
           </View>
         ),
     },
