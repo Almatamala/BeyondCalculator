@@ -3,7 +3,7 @@ import { DrinkLevel, GlassType } from "@/types/calculator";
 export const LEVEL_LABELS: Record<DrinkLevel, string> = {
   "algo piola":   "Algo piola",
   "normal":       "Normal",
-  "'algo piola'": "Bien cargado",
+  "'algo piola'": "''Algo piola''",
 };
 
 export const LEVEL_RATIOS: Record<DrinkLevel, { liquor: number; soda: number }> = {
