@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Text,
   View,
+  ViewStyle,
   useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -14,10 +15,17 @@ import SlideProgress from "./SlideProgress";
 export interface Slide {
   question: string;
   content: React.ReactNode;
+  /** Override the card ScrollView style (e.g. maxHeight) */
+  cardStyle?: ViewStyle;
+  /** Override the card content container style */
+  contentStyle?: ViewStyle;
+  /** When false, renders a plain View instead of ScrollView — card shrinks to content height */
+  scrollable?: boolean;
 }
 
 export interface SlideContainerRef {
   scrollTo: (index: number) => void;
+  scrollCardToEnd: (index: number) => void;
 }
 
 interface Props {
@@ -31,11 +39,15 @@ const SlideContainer = forwardRef<SlideContainerRef, Props>(({ slides }, ref) =>
   const insets = useSafeAreaInsets();
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
+  const cardRefs = useRef<(ScrollView | null)[]>([]);
 
   useImperativeHandle(ref, () => ({
     scrollTo: (index: number) => {
       scrollRef.current?.scrollTo({ x: index * width, animated: true });
       setCurrentIndex(index);
+    },
+    scrollCardToEnd: (index: number) => {
+      cardRefs.current[index]?.scrollToEnd({ animated: true });
     },
   }));
 
@@ -68,18 +80,28 @@ const SlideContainer = forwardRef<SlideContainerRef, Props>(({ slides }, ref) =>
             <SlideProgress total={slides.length} current={currentIndex} />
           </View>
 
-          <ScrollView
-            style={[styles.card, { maxHeight: height * 0.58 }]}
-            contentContainerStyle={[
-              styles.cardContent,
-              { paddingBottom: insets.bottom + 24 },
-            ]}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            nestedScrollEnabled
-          >
-            {slide.content}
-          </ScrollView>
+          {slide.scrollable === false ? (
+            <View
+              style={[styles.card, styles.cardContent, { paddingBottom: insets.bottom + 24, flexGrow: 0 }, slide.contentStyle, slide.cardStyle]}
+            >
+              {slide.content}
+            </View>
+          ) : (
+            <ScrollView
+              ref={(r) => { cardRefs.current[i] = r; }}
+              style={[styles.card, { maxHeight: height * 0.58 }, slide.cardStyle]}
+              contentContainerStyle={[
+                styles.cardContent,
+                { paddingBottom: insets.bottom + 24 },
+                slide.contentStyle,
+              ]}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled
+            >
+              {slide.content}
+            </ScrollView>
+          )}
         </ImageBackground>
       ))}
     </ScrollView>
@@ -124,5 +146,6 @@ const styles = StyleSheet.create({
   cardContent: {
     padding: 24,
     gap: 20,
+    flexGrow: 1,
   },
 });

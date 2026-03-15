@@ -5,9 +5,10 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ViewStyle,
 } from "react-native";
 
-import { LEVEL_LABELS } from "@/constants/drinks";
+import { LEVEL_LABELS, LEVEL_RATIOS } from "@/constants/drinks";
 import { DrinkLevel } from "@/types/calculator";
 
 const LEVELS: DrinkLevel[] = ["algo piola", "normal", "'algo piola'"];
@@ -15,17 +16,35 @@ const LEVELS: DrinkLevel[] = ["algo piola", "normal", "'algo piola'"];
 interface Props {
   value: DrinkLevel;
   onChange: (level: DrinkLevel) => void;
+  /** 'row' (default): ratio text to the right of select. 'column': ratio below select. */
+  layout?: "row" | "column";
+  style?: ViewStyle;
 }
 
-export default function LevelPicker({ value, onChange }: Props) {
+export default function LevelPicker({ value, onChange, layout = "row", style }: Props) {
   const [open, setOpen] = useState(false);
+  const liquorPct = Math.round(LEVEL_RATIOS[value].liquor * 100);
+
+  const select = (
+    <TouchableOpacity style={styles.select} onPress={() => setOpen(true)}>
+      <Text style={styles.selectText}>{LEVEL_LABELS[value]}</Text>
+      <Text style={styles.chevron}>▾</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <>
-      <TouchableOpacity style={styles.select} onPress={() => setOpen(true)}>
-        <Text style={styles.selectText}>{LEVEL_LABELS[value]}</Text>
-        <Text style={styles.chevron}>▾</Text>
-      </TouchableOpacity>
+      {layout === "row" ? (
+        <View style={[styles.rowContainer, style]}>
+          {select}
+          <Text style={styles.ratio}>{liquorPct}% pisco</Text>
+        </View>
+      ) : (
+        <View style={[styles.colContainer, style]}>
+          {select}
+          <Text style={styles.ratioBelow}>{liquorPct}% pisco</Text>
+        </View>
+      )}
 
       <Modal transparent visible={open} animationType="fade" onRequestClose={() => setOpen(false)}>
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={() => setOpen(false)}>
@@ -39,6 +58,9 @@ export default function LevelPicker({ value, onChange }: Props) {
                 <Text style={[styles.optionText, value === level && styles.optionTextActive]}>
                   {LEVEL_LABELS[level]}
                 </Text>
+                <Text style={[styles.optionRatio, value === level && styles.optionRatioActive]}>
+                  {Math.round(LEVEL_RATIOS[level].liquor * 100)}% pisco
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -49,6 +71,15 @@ export default function LevelPicker({ value, onChange }: Props) {
 }
 
 const styles = StyleSheet.create({
+  rowContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  colContainer: {
+    alignItems: "center",
+    gap: 4,
+  },
   select: {
     flexDirection: "row",
     alignItems: "center",
@@ -59,6 +90,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     backgroundColor: "#fafafa",
+    flex: 1,
   },
   selectText: {
     fontSize: 14,
@@ -67,6 +99,16 @@ const styles = StyleSheet.create({
   chevron: {
     fontSize: 16,
     color: "#888",
+  },
+  ratio: {
+    fontSize: 13,
+    color: "#333",
+    opacity: 0.35,
+  },
+  ratioBelow: {
+    fontSize: 12,
+    color: "#333",
+    opacity: 0.35,
   },
   backdrop: {
     flex: 1,
@@ -77,7 +119,7 @@ const styles = StyleSheet.create({
   dropdown: {
     backgroundColor: "#fff",
     borderRadius: 14,
-    width: 220,
+    width: 240,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -86,6 +128,9 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   option: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: 14,
     paddingHorizontal: 20,
   },
@@ -99,5 +144,12 @@ const styles = StyleSheet.create({
   optionTextActive: {
     color: "#fff",
     fontWeight: "600",
+  },
+  optionRatio: {
+    fontSize: 12,
+    color: "#999",
+  },
+  optionRatioActive: {
+    color: "rgba(255,255,255,0.75)",
   },
 });

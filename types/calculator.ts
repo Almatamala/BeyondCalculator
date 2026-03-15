@@ -8,12 +8,14 @@ export interface Person {
   id: string;
   name: string;
   level: DrinkLevel;
+  drinksPerPerson: number;
 }
 
 export interface CalculatorState {
   mode: Mode | null;
-  peopleCount: number; // used in 'same' 
-  drinksPerPerson: number; // used in 'same' mode
-  people: Person[];    // used in 'personalized' mode
+  peopleCount: number;      // same mode
+  drinksPerPerson: number;  // same mode
+  level: DrinkLevel;        // same mode
+  people: Person[];         // personalized mode
   glassType: GlassType | null;
 }

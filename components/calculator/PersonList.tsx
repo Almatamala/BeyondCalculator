@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 
+import CountPicker from "@/components/countPicker";
 import { DrinkLevel, Person } from "@/types/calculator";
 import LevelPicker from "./LevelPicker";
 
@@ -19,6 +20,7 @@ interface Props {
   onRemove: (id: string) => void;
   onNameChange: (id: string, name: string) => void;
   onLevelChange: (id: string, level: DrinkLevel) => void;
+  onDrinksChange: (id: string, count: number) => void;
 }
 
 export default function PersonList({
@@ -27,6 +29,7 @@ export default function PersonList({
   onRemove,
   onNameChange,
   onLevelChange,
+  onDrinksChange,
 }: Props) {
   return (
     <View style={styles.container}>
@@ -47,12 +50,22 @@ export default function PersonList({
             </TouchableOpacity>
           </View>
 
-          {/* level picker indented under the name */}
-          <View style={styles.levelRow}>
-            <LevelPicker
-              value={person.level}
-              onChange={level => onLevelChange(person.id, level)}
-            />
+          {/* level + drinks row, indented under name */}
+          <View style={styles.controls}>
+            <View style={styles.controlGroup}>
+              <Text style={styles.controlLabel}>Nivel</Text>
+              <LevelPicker
+                value={person.level}
+                onChange={level => onLevelChange(person.id, level)}
+              />
+            </View>
+            <View style={styles.controlGroup}>
+              <Text style={styles.controlLabel}>Vasos</Text>
+              <CountPicker
+                value={person.drinksPerPerson}
+                onChange={count => onDrinksChange(person.id, count)}
+              />
+            </View>
           </View>
         </View>
       ))}
@@ -74,7 +87,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f7f7f7",
     borderRadius: 14,
     padding: 12,
-    gap: 10,
+    gap: 12,
   },
   row: {
     flexDirection: "row",
@@ -109,8 +122,19 @@ const styles = StyleSheet.create({
     color: "#666",
     lineHeight: 20,
   },
-  levelRow: {
-    paddingLeft: 50, // aligns with name input (avatar 40 + gap 10)
+  controls: {
+    paddingHorizontal: 50, // symmetric — keeps controls centered under name input
+    gap: 10,
+  },
+  controlGroup: {
+    gap: 4,
+  },
+  controlLabel: {
+    fontSize: 12,
+    color: "#999",
+    fontWeight: "500",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   addBtn: {
     flexDirection: "row",
