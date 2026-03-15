@@ -53,23 +53,23 @@ export default function CalculatorScreen() {
 
   /* ── Navigation ── */
 
-  const hasDataEntered = () => {
-    if (state.mode === "personalized") {
-      return state.people.length > 0;
-    }
-    return (
-      state.peopleCount !== 1 ||
-      state.drinksPerPerson !== 3 ||
-      state.level !== "normal"
-    );
-  };
-
   const goForward = () => {
     setDirection("forward");
     setCurrentStep((s) => s + 1);
   };
 
-  const goBack = () => {
+  const goBack = useCallback(() => {
+    const hasDataEntered = () => {
+      if (state.mode === "personalized") {
+        return state.people.length > 0;
+      }
+      return (
+        state.peopleCount !== 1 ||
+        state.drinksPerPerson !== 3 ||
+        state.level !== "normal"
+      );
+    };
+
     if (currentStep === 1 && hasDataEntered()) {
       Alert.alert(
         "¿Estás seguro?",
@@ -91,7 +91,7 @@ export default function CalculatorScreen() {
     }
     setDirection("backward");
     setCurrentStep((s) => s - 1);
-  };
+  }, [currentStep, state.mode, state.people, state.peopleCount, state.drinksPerPerson, state.level, reset, setDirection, setCurrentStep]);
 
   useFocusEffect(
     useCallback(() => {
@@ -104,7 +104,7 @@ export default function CalculatorScreen() {
       };
       const sub = BackHandler.addEventListener("hardwareBackPress", onBack);
       return () => sub.remove();
-    }, [currentStep]),
+    }, [currentStep, goBack]),
   );
 
   const handleReset = () => {
