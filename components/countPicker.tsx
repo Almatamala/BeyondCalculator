@@ -4,11 +4,12 @@ import { Pressable, Text, TextInput, View } from "react-native";
 interface CountPickerProps {
   value: number;
   onChange: (value: number) => void;
+  alignItems?: 'center' | 'flex-start' | 'flex-end' | 'stretch' | 'baseline';
 }
 
-export default function CountPicker({ value, onChange }: CountPickerProps) {
+export default function CountPicker({ value, onChange, alignItems = 'center' }: CountPickerProps) {
   return (
-    <View style={{ gap: 12, alignItems: 'center' }}>
+    <View style={{ gap: 12, alignItems }}>
       <View
         style={{
           flexDirection: 'row',

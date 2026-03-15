@@ -64,6 +64,7 @@ export default function PersonList({
               <CountPicker
                 value={person.drinksPerPerson}
                 onChange={count => onDrinksChange(person.id, count)}
+                alignItems="flex-start"
               />
             </View>
           </View>
