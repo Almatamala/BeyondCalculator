@@ -1,9 +1,9 @@
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import React, { forwardRef, useImperativeHandle, useRef } from "react";
 import {
   ImageBackground,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
   ViewStyle,
@@ -22,6 +22,8 @@ export interface Step {
   scrollable?: boolean;
   /** Card expands to fill all available vertical space, header pushed up */
   expandCard?: boolean;
+  /** Card wraps exactly to content height, no height constraints applied */
+  fitContent?: boolean;
   /** Fixed content rendered below the scrollable area (e.g. confirm button) */
   bottomContent?: React.ReactNode;
 }
@@ -62,10 +64,21 @@ const StepContainer = forwardRef<StepContainerRef, Props>(
       <ImageBackground source={BG_IMAGE} style={styles.bg} resizeMode="cover">
         <View style={styles.overlay} />
 
+        {/* Back button — absolute, top-left of the whole screen */}
+        {currentStep > 0 && (
+          <TouchableOpacity
+            style={[styles.backBtn, { top: insets.top + 8 }]}
+            onPress={onBack}
+            activeOpacity={0.7}
+          >
+            <MaterialIcons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+        )}
+
         <View
           style={[
             styles.top,
-            { paddingTop: insets.top + 24 },
+            { paddingTop: step.expandCard ? insets.top + 56 : insets.top + 24 },
             step.expandCard && styles.topCompact,
           ]}
         >
@@ -86,38 +99,29 @@ const StepContainer = forwardRef<StepContainerRef, Props>(
             step.expandCard && { flex: 1 },
           ]}
         >
-          {/* Back button at top-left of card */}
-          {currentStep > 0 && (
-            <TouchableOpacity
-              style={styles.backBtn}
-              onPress={onBack}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.backBtnText}>← Volver</Text>
-            </TouchableOpacity>
-          )}
-
           {/* Animated content area */}
           <View
             style={[
               styles.contentWrapper,
-              step.expandCard
-                ? { flex: 1 }
-                : step.scrollable === false
-                  ? { maxHeight: height * 0.50 }
-                  : { height: height * 0.50 },
+              step.fitContent
+                ? undefined
+                : step.expandCard
+                  ? { flex: 1 }
+                  : step.scrollable === false
+                    ? { maxHeight: height * 0.50 }
+                    : { height: height * 0.50 },
             ]}
           >
             <Animated.View
               key={currentStep}
               entering={entering}
               style={
-                step.scrollable !== false || step.expandCard
+                !step.fitContent && (step.scrollable !== false || step.expandCard)
                   ? { flex: 1 }
                   : undefined
               }
             >
-              {step.scrollable === false && !step.expandCard ? (
+              {step.fitContent || (step.scrollable === false && !step.expandCard) ? (
                 <View style={[styles.cardContent, step.contentStyle]}>
                   {step.content}
                 </View>
@@ -188,21 +192,16 @@ const styles = StyleSheet.create({
     elevation: 16,
   },
   backBtn: {
-    paddingLeft: 24,
-    paddingTop: 16,
-    paddingBottom: 4,
-    alignSelf: "flex-start",
-  },
-  backBtnText: {
-    fontSize: 15,
-    color: "#666",
-    fontWeight: "500",
+    position: "absolute",
+    left: 16,
+    zIndex: 10,
+    padding: 8,
   },
   contentWrapper: {
     overflow: "hidden",
   },
   cardContent: {
-    padding: 24,
-    gap: 20,
+    padding: 16,
+    gap: 16,
   },
 });

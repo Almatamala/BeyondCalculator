@@ -25,12 +25,18 @@ export default function LevelPicker({ value, onChange, layout = "row", style }: 
   const [open, setOpen] = useState(false);
   const liquorPct = Math.round(LEVEL_RATIOS[value].liquor * 100);
 
-  const select = (
-    <TouchableOpacity style={styles.select} onPress={() => setOpen(true)}>
-      <Text style={styles.selectText}>{LEVEL_LABELS[value]}</Text>
-      <Text style={styles.chevron}>▾</Text>
-    </TouchableOpacity>
-  );
+  const select =
+    layout === "column" ? (
+      <TouchableOpacity style={[styles.select, styles.selectCentered]} onPress={() => setOpen(true)}>
+        <Text style={styles.selectText}>{LEVEL_LABELS[value]}</Text>
+        <Text style={[styles.chevron, styles.chevronRight]}>▾</Text>
+      </TouchableOpacity>
+    ) : (
+      <TouchableOpacity style={styles.select} onPress={() => setOpen(true)}>
+        <Text style={styles.selectText}>{LEVEL_LABELS[value]}</Text>
+        <Text style={styles.chevron}>▾</Text>
+      </TouchableOpacity>
+    );
 
   return (
     <>
@@ -77,7 +83,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   colContainer: {
-    alignItems: "center",
+    alignItems: "stretch",
     gap: 4,
   },
   select: {
@@ -96,6 +102,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#333",
   },
+  selectCentered: {
+    justifyContent: "center",
+  },
+  chevronRight: {
+    position: "absolute",
+    right: 12,
+  },
   chevron: {
     fontSize: 16,
     color: "#888",
@@ -109,6 +122,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#333",
     opacity: 0.35,
+    textAlign: "center",
   },
   backdrop: {
     flex: 1,

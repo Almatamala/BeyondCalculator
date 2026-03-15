@@ -14,6 +14,7 @@ interface Props {
   onBottleSizeChange: (ml: number) => void;
   unit?: Unit;
   hideVolume?: boolean;
+  totalLabel?: string;
 }
 
 function formatSize(ml: number): string {
@@ -30,6 +31,7 @@ export default function ResultCard({
   onBottleSizeChange,
   unit = DEFAULT_UNIT,
   hideVolume = false,
+  totalLabel,
 }: Props) {
   const rounded = Math.round(valueMl);
   const count = Math.ceil(valueMl / selectedBottleMl);
@@ -41,7 +43,9 @@ export default function ResultCard({
     <View style={styles.card}>
       <View style={styles.header}>
         <Text style={styles.label}>{label}</Text>
-        {!hideVolume && <Text style={styles.total}>{rounded} ml</Text>}
+        {!hideVolume && (
+          <Text style={styles.total}>{totalLabel ?? `${rounded} ml`}</Text>
+        )}
       </View>
 
       <View style={styles.divider} />
@@ -92,8 +96,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
   },
   label: {
     fontSize: 15,
@@ -110,9 +114,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
   },
   bottleSection: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 8,
+    paddingHorizontal: 14,
+    paddingTop: 6,
+    paddingBottom: 4,
     gap: 6,
   },
   sectionLabel: {
@@ -149,9 +153,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   result: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    paddingTop: 8,
+    paddingHorizontal: 14,
+    paddingBottom: 8,
+    paddingTop: 4,
     gap: 2,
   },
   count: {

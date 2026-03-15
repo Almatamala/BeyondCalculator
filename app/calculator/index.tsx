@@ -1,5 +1,13 @@
-import { useRef, useState } from "react";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useRef, useState } from "react";
+import {
+  Alert,
+  BackHandler,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import GlassSelector from "@/components/calculator/GlassSelector";
 import LevelPicker from "@/components/calculator/LevelPicker";
@@ -7,7 +15,10 @@ import ModeSelector from "@/components/calculator/ModeSelector";
 import PersonList from "@/components/calculator/PersonList";
 import ResultCard from "@/components/calculator/ResultCard";
 import CountPicker from "@/components/countPicker";
-import StepContainer, { Step, StepContainerRef } from "@/components/StepContainer";
+import StepContainer, {
+  Step,
+  StepContainerRef,
+} from "@/components/StepContainer";
 import { useCalculator } from "@/context/CalculatorContext";
 import { GlassType, Mode } from "@/types/calculator";
 import { calculateResults } from "@/utils/calculations";
@@ -82,6 +93,20 @@ export default function CalculatorScreen() {
     setCurrentStep((s) => s - 1);
   };
 
+  useFocusEffect(
+    useCallback(() => {
+      const onBack = () => {
+        if (currentStep > 0) {
+          goBack();
+          return true;
+        }
+        return false;
+      };
+      const sub = BackHandler.addEventListener("hardwareBackPress", onBack);
+      return () => sub.remove();
+    }, [currentStep]),
+  );
+
   const handleReset = () => {
     reset();
     setPiscoBottleMl(1000);
@@ -94,12 +119,12 @@ export default function CalculatorScreen() {
 
   const handleModeSelect = (mode: Mode) => {
     setMode(mode);
-    setTimeout(goForward, 200);
+    setTimeout(goForward, 100);
   };
 
   const handleGlassSelect = (glass: GlassType) => {
     setGlassType(glass);
-    setTimeout(goForward, 200);
+    setTimeout(goForward, 100);
   };
 
   const handleAddPerson = () => {
@@ -132,7 +157,10 @@ export default function CalculatorScreen() {
             <View style={styles.sameMode}>
               <View style={styles.counterGroup}>
                 <Text style={styles.counterLabel}>¿Cuántos weones son?</Text>
-                <CountPicker value={state.peopleCount} onChange={setPeopleCount} />
+                <CountPicker
+                  value={state.peopleCount}
+                  onChange={setPeopleCount}
+                />
               </View>
               <View style={styles.counterGroup}>
                 <Text style={styles.counterLabel}>
@@ -149,7 +177,7 @@ export default function CalculatorScreen() {
                   value={state.level}
                   onChange={setLevel}
                   layout="column"
-                  style={{ width: 200 }}
+                  style={{ width: 150, height: 60 }}
                 />
               </View>
               <Text style={styles.hint}>
@@ -171,15 +199,17 @@ export default function CalculatorScreen() {
     },
     {
       question: "¿Qué vaso están usando?",
-      content: <GlassSelector value={state.glassType} onChange={handleGlassSelect} />,
+      content: (
+        <GlassSelector value={state.glassType} onChange={handleGlassSelect} />
+      ),
       scrollable: false,
     },
     {
       question: "Esto es lo que necesitan",
-      expandCard: true,
-      contentStyle: { gap: 10 },
+      fitContent: true,
+      contentStyle: { gap: 8, padding: 12 },
       content: (
-        <View style={styles.slideContent}>
+        <View style={[styles.slideContent, { gap: 10 }]}>
           <ResultCard
             label="Pisco"
             valueMl={results.liquorMl}
@@ -201,7 +231,7 @@ export default function CalculatorScreen() {
             selectedBottleMl={1090}
             onBottleSizeChange={() => {}}
             unit={{ singular: "bolsa de 1 kg", plural: "bolsas de 1 kg" }}
-            hideVolume
+            totalLabel={`${(results.iceMl / 1090).toFixed(1)} kg`}
           />
           <TouchableOpacity style={styles.resetBtn} onPress={handleReset}>
             <Text style={styles.resetBtnText}>Empezar de nuevo</Text>
