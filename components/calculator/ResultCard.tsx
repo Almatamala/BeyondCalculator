@@ -18,7 +18,7 @@ interface Props {
 }
 
 function formatSize(ml: number): string {
-  return ml % 1000 === 0 ? `${ml / 1000} L` : `${ml} ml`;
+  return ml >= 1000 ? `${ml / 1000} L` : `${ml} ml`;
 }
 
 const DEFAULT_UNIT: Unit = { singular: 'botella', plural: 'botellas' };
