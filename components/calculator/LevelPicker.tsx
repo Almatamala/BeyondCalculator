@@ -13,26 +13,47 @@ import { DrinkLevel } from "@/types/calculator";
 
 const LEVELS: DrinkLevel[] = ["algo piola", "normal", "'algo piola'"];
 
+const LEVEL_EMOJI: Record<DrinkLevel, string> = {
+  "algo piola": "🌿",
+  normal: "🍹",
+  "'algo piola'": "🔥",
+};
+
+const LEVEL_DESC: Record<DrinkLevel, string> = {
+  "algo piola": "Mañana entro a las 9",
+  normal: "La de siempre",
+  "'algo piola'": "Pa' los valientes",
+};
+
 interface Props {
   value: DrinkLevel;
   onChange: (level: DrinkLevel) => void;
-  /** 'row' (default): ratio text to the right of select. 'column': ratio below select. */
   layout?: "row" | "column";
   style?: ViewStyle;
 }
 
-export default function LevelPicker({ value, onChange, layout = "row", style }: Props) {
+export default function LevelPicker({
+  value,
+  onChange,
+  layout = "row",
+  style,
+}: Props) {
   const [open, setOpen] = useState(false);
   const liquorPct = Math.round(LEVEL_RATIOS[value].liquor * 100);
 
   const select =
     layout === "column" ? (
-      <TouchableOpacity style={[styles.select, styles.selectCentered]} onPress={() => setOpen(true)}>
+      <TouchableOpacity
+        style={[styles.select, styles.selectCentered]}
+        onPress={() => setOpen(true)}
+      >
+        <Text style={styles.selectEmoji}>{LEVEL_EMOJI[value]}</Text>
         <Text style={styles.selectText}>{LEVEL_LABELS[value]}</Text>
         <Text style={[styles.chevron, styles.chevronRight]}>▾</Text>
       </TouchableOpacity>
     ) : (
       <TouchableOpacity style={styles.select} onPress={() => setOpen(true)}>
+        <Text style={styles.selectEmoji}>{LEVEL_EMOJI[value]}</Text>
         <Text style={styles.selectText}>{LEVEL_LABELS[value]}</Text>
         <Text style={styles.chevron}>▾</Text>
       </TouchableOpacity>
@@ -52,23 +73,61 @@ export default function LevelPicker({ value, onChange, layout = "row", style }: 
         </View>
       )}
 
-      <Modal transparent visible={open} animationType="fade" onRequestClose={() => setOpen(false)}>
-        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={() => setOpen(false)}>
-          <View style={styles.dropdown}>
-            {LEVELS.map(level => (
-              <TouchableOpacity
-                key={level}
-                style={[styles.option, value === level && styles.optionActive]}
-                onPress={() => { onChange(level); setOpen(false); }}
-              >
-                <Text style={[styles.optionText, value === level && styles.optionTextActive]}>
-                  {LEVEL_LABELS[level]}
-                </Text>
-                <Text style={[styles.optionRatio, value === level && styles.optionRatioActive]}>
-                  {Math.round(LEVEL_RATIOS[level].liquor * 100)}% pisco
-                </Text>
-              </TouchableOpacity>
-            ))}
+      <Modal
+        transparent
+        visible={open}
+        animationType="fade"
+        onRequestClose={() => setOpen(false)}
+      >
+        <TouchableOpacity
+          style={styles.backdrop}
+          activeOpacity={1}
+          onPress={() => setOpen(false)}
+        >
+          <View style={styles.sheet}>
+            <Text style={styles.sheetTitle}>% de pisco por vaso</Text>
+            {LEVELS.map((level) => {
+              const active = value === level;
+              return (
+                <TouchableOpacity
+                  key={level}
+                  style={[styles.option, active && styles.optionActive]}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    onChange(level);
+                    setOpen(false);
+                  }}
+                >
+                  <Text style={styles.optionEmoji}>{LEVEL_EMOJI[level]}</Text>
+                  <View style={styles.optionText}>
+                    <Text
+                      style={[
+                        styles.optionLabel,
+                        active && styles.optionLabelActive,
+                      ]}
+                    >
+                      {LEVEL_LABELS[level]}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.optionDesc,
+                        active && styles.optionDescActive,
+                      ]}
+                    >
+                      {LEVEL_DESC[level]}
+                    </Text>
+                  </View>
+                  <Text
+                    style={[
+                      styles.optionRatio,
+                      active && styles.optionRatioActive,
+                    ]}
+                  >
+                    {Math.round(LEVEL_RATIOS[level].liquor * 100)}%
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </TouchableOpacity>
       </Modal>
@@ -89,7 +148,7 @@ const styles = StyleSheet.create({
   select: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 6,
     borderWidth: 1,
     borderColor: "#ddd",
     borderRadius: 10,
@@ -98,12 +157,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#fafafa",
     flex: 1,
   },
+  selectCentered: {
+    justifyContent: "center",
+  },
+  selectEmoji: {
+    fontSize: 16,
+  },
   selectText: {
     fontSize: 14,
     color: "#333",
-  },
-  selectCentered: {
-    justifyContent: "center",
+    flex: 1,
   },
   chevronRight: {
     position: "absolute",
@@ -124,46 +187,80 @@ const styles = StyleSheet.create({
     opacity: 0.35,
     textAlign: "center",
   },
+
+  // Modal
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.3)",
+    backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 24,
   },
-  dropdown: {
+  sheet: {
     backgroundColor: "#fff",
-    borderRadius: 14,
-    width: 240,
-    overflow: "hidden",
+    borderRadius: 20,
+    width: "100%",
+    maxWidth: 360,
+    paddingTop: 24,
+    paddingBottom: 12,
+    paddingHorizontal: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
+    elevation: 12,
+    gap: 8,
+  },
+  sheetTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#aaa",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 4,
+    paddingHorizontal: 4,
   },
   option: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    borderRadius: 14,
     paddingVertical: 14,
-    paddingHorizontal: 20,
+    paddingHorizontal: 14,
+    gap: 14,
   },
   optionActive: {
     backgroundColor: "#F5A623",
   },
+  optionEmoji: {
+    fontSize: 28,
+    width: 36,
+    textAlign: "center",
+  },
   optionText: {
-    fontSize: 15,
-    color: "#333",
+    flex: 1,
+    gap: 2,
   },
-  optionTextActive: {
-    color: "#fff",
+  optionLabel: {
+    fontSize: 16,
     fontWeight: "600",
+    color: "#222",
   },
-  optionRatio: {
+  optionLabelActive: {
+    color: "#fff",
+  },
+  optionDesc: {
     fontSize: 12,
     color: "#999",
   },
+  optionDescActive: {
+    color: "rgba(255,255,255,0.8)",
+  },
+  optionRatio: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#ccc",
+  },
   optionRatioActive: {
-    color: "rgba(255,255,255,0.75)",
+    color: "rgba(255,255,255,0.85)",
   },
 });
