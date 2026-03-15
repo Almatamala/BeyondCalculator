@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import GlassSelector from "@/components/calculator/GlassSelector";
 import LevelPicker from "@/components/calculator/LevelPicker";
@@ -7,15 +7,12 @@ import ModeSelector from "@/components/calculator/ModeSelector";
 import PersonList from "@/components/calculator/PersonList";
 import ResultCard from "@/components/calculator/ResultCard";
 import CountPicker from "@/components/countPicker";
-import SlideContainer, { Slide, SlideContainerRef } from "@/components/SlideContainer";
+import StepContainer, { Step, StepContainerRef } from "@/components/StepContainer";
 import { useCalculator } from "@/context/CalculatorContext";
 import { GlassType, Mode } from "@/types/calculator";
 import { calculateResults } from "@/utils/calculations";
 
 export default function CalculatorScreen() {
-  const pagerRef = useRef<SlideContainerRef>(null);
-  const { height } = useWindowDimensions();
-
   const {
     state,
     setMode,
@@ -31,33 +28,91 @@ export default function CalculatorScreen() {
     reset,
   } = useCalculator();
 
+  const containerRef = useRef<StepContainerRef>(null);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [direction, setDirection] = useState<"forward" | "backward">("forward");
+
   const PISCO_BOTTLE_SIZES = [750, 1000];
-  const SODA_BOTTLE_SIZES  = [1000, 1500, 2000, 3000];
+  const SODA_BOTTLE_SIZES = [1000, 1500, 2000, 3000];
 
   const [piscoBottleMl, setPiscoBottleMl] = useState(1000);
-  const [sodaBottleMl,  setSodaBottleMl]  = useState(3000);
+  const [sodaBottleMl, setSodaBottleMl] = useState(3000);
 
   const results = calculateResults(state);
 
-  const handleModeSelect = (mode: Mode) => {
-    setMode(mode);
-    pagerRef.current?.scrollTo(1);
+  /* ── Navigation ── */
+
+  const hasDataEntered = () => {
+    if (state.mode === "personalized") {
+      return state.people.length > 0;
+    }
+    return (
+      state.peopleCount !== 1 ||
+      state.drinksPerPerson !== 3 ||
+      state.level !== "normal"
+    );
   };
 
-  const handleAddPerson = () => {
-    addPerson();
-    setTimeout(() => pagerRef.current?.scrollCardToEnd(1), 50);
+  const goForward = () => {
+    setDirection("forward");
+    setCurrentStep((s) => s + 1);
+  };
+
+  const goBack = () => {
+    if (currentStep === 1 && hasDataEntered()) {
+      Alert.alert(
+        "¿Estás seguro?",
+        "Se perderán los datos ingresados en este paso.",
+        [
+          { text: "Cancelar", style: "cancel" },
+          {
+            text: "Sí, volver",
+            style: "destructive",
+            onPress: () => {
+              reset();
+              setDirection("backward");
+              setCurrentStep(0);
+            },
+          },
+        ],
+      );
+      return;
+    }
+    setDirection("backward");
+    setCurrentStep((s) => s - 1);
+  };
+
+  const handleReset = () => {
+    reset();
+    setPiscoBottleMl(1000);
+    setSodaBottleMl(3000);
+    setDirection("backward");
+    setCurrentStep(0);
+  };
+
+  /* ── Auto-advance handlers (feedback visual → slide) ── */
+
+  const handleModeSelect = (mode: Mode) => {
+    setMode(mode);
+    setTimeout(goForward, 200);
   };
 
   const handleGlassSelect = (glass: GlassType) => {
     setGlassType(glass);
-    pagerRef.current?.scrollTo(3);
+    setTimeout(goForward, 200);
   };
 
-  const slides: Slide[] = [
+  const handleAddPerson = () => {
+    addPerson();
+    setTimeout(() => containerRef.current?.scrollContentToEnd(), 50);
+  };
+
+  /* ── Steps ── */
+
+  const steps: Step[] = [
     {
       question: "¿Tomarán todos lo mismo?",
-      content: <ModeSelector onSelect={handleModeSelect} />,
+      content: <ModeSelector value={state.mode} onSelect={handleModeSelect} />,
       scrollable: false,
     },
     {
@@ -80,34 +135,49 @@ export default function CalculatorScreen() {
                 <CountPicker value={state.peopleCount} onChange={setPeopleCount} />
               </View>
               <View style={styles.counterGroup}>
-                <Text style={styles.counterLabel}>¿Cuántos vasos tomará cada weon/a?</Text>
-                <CountPicker value={state.drinksPerPerson} onChange={setDrinksPerPerson} />
+                <Text style={styles.counterLabel}>
+                  ¿Cuántos vasos tomará cada weon/a?
+                </Text>
+                <CountPicker
+                  value={state.drinksPerPerson}
+                  onChange={setDrinksPerPerson}
+                />
               </View>
               <View style={styles.counterGroup}>
                 <Text style={styles.counterLabel}>¿Cómo van a tomar?</Text>
-                <LevelPicker value={state.level} onChange={setLevel} layout="column" style={{ width: 200 }} />
+                <LevelPicker
+                  value={state.level}
+                  onChange={setLevel}
+                  layout="column"
+                  style={{ width: 200 }}
+                />
               </View>
-              <Text style={styles.hint}>Toca el número para escribir directamente</Text>
+              <Text style={styles.hint}>
+                Toca el número para escribir directamente
+              </Text>
             </View>
           )}
-
-          <TouchableOpacity
-            style={styles.listoBtn}
-            onPress={() => pagerRef.current?.scrollTo(2)}
-          >
-            <Text style={styles.listoBtnText}>Listo →</Text>
-          </TouchableOpacity>
         </View>
+      ),
+      bottomContent: (
+        <TouchableOpacity
+          style={styles.confirmBtn}
+          onPress={goForward}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.confirmBtnText}>Confirmar →</Text>
+        </TouchableOpacity>
       ),
     },
     {
       question: "¿Qué vaso están usando?",
       content: <GlassSelector value={state.glassType} onChange={handleGlassSelect} />,
+      scrollable: false,
     },
     {
       question: "Esto es lo que necesitan",
-      cardStyle: { maxHeight: height * 0.72 },
-      contentStyle: { flexGrow: 0, gap: 10 },
+      expandCard: true,
+      contentStyle: { gap: 10 },
       content: (
         <View style={styles.slideContent}>
           <ResultCard
@@ -130,10 +200,10 @@ export default function CalculatorScreen() {
             bottleSizes={[1090]}
             selectedBottleMl={1090}
             onBottleSizeChange={() => {}}
-            unit={{ singular: 'bolsa de 1 kg', plural: 'bolsas de 1 kg' }}
+            unit={{ singular: "bolsa de 1 kg", plural: "bolsas de 1 kg" }}
             hideVolume
           />
-          <TouchableOpacity style={styles.resetBtn} onPress={reset}>
+          <TouchableOpacity style={styles.resetBtn} onPress={handleReset}>
             <Text style={styles.resetBtnText}>Empezar de nuevo</Text>
           </TouchableOpacity>
         </View>
@@ -141,7 +211,15 @@ export default function CalculatorScreen() {
     },
   ];
 
-  return <SlideContainer ref={pagerRef} slides={slides} />;
+  return (
+    <StepContainer
+      ref={containerRef}
+      steps={steps}
+      currentStep={currentStep}
+      direction={direction}
+      onBack={goBack}
+    />
+  );
 }
 
 const styles = StyleSheet.create({
@@ -168,13 +246,15 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     textAlign: "center",
   },
-  listoBtn: {
+  confirmBtn: {
     backgroundColor: "#F5A623",
     borderRadius: 14,
-    paddingVertical: 16,
+    paddingVertical: 14,
+    marginHorizontal: 24,
+    marginBottom: 8,
     alignItems: "center",
   },
-  listoBtnText: {
+  confirmBtnText: {
     fontSize: 16,
     fontWeight: "700",
     color: "#fff",
