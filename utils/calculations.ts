@@ -8,7 +8,7 @@ const FILL_RATIO = 0.9;
 const ICE_ML_PER_DRINK = 120;
 
 /** Volume actually available for liquid after fill ratio and ice displacement */
-function usableVolume(glassMl: number): number {
+export function usableVolume(glassMl: number): number {
   const filled = glassMl * FILL_RATIO;
   return Math.max(0, filled - ICE_ML_PER_DRINK);
 }

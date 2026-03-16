@@ -1,9 +1,11 @@
 import * as Clipboard from "expo-clipboard";
 import { useFocusEffect } from "expo-router";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
+  Animated,
   BackHandler,
+  PanResponder,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -23,7 +25,8 @@ import StepContainer, {
 } from "@/components/StepContainer";
 import { useCalculator } from "@/context/CalculatorContext";
 import { GlassType, Mode } from "@/types/calculator";
-import { calculateResults } from "@/utils/calculations";
+import { calculateResults, usableVolume } from "@/utils/calculations";
+import { GLASS_CONFIG, LEVEL_RATIOS } from "@/constants/drinks";
 
 export default function CalculatorScreen() {
   const {
@@ -52,6 +55,52 @@ export default function CalculatorScreen() {
   const [sodaBottleMl, setSodaBottleMl] = useState(3000);
 
   const results = calculateResults(state);
+
+  const totalDrinks =
+    state.mode === 'personalized'
+      ? state.people.reduce((sum, p) => sum + p.drinksPerPerson, 0)
+      : state.peopleCount * state.drinksPerPerson;
+
+  // For pisco affected-drinks count, always use "normal" level regardless of selection
+  const normalPiscoMlPerDrink = state.glassType
+    ? usableVolume(GLASS_CONFIG[state.glassType].ml) * LEVEL_RATIOS['normal'].liquor
+    : 0;
+
+  /* ── Shortage notification ── */
+
+  function shortfallInfo(valueMl: number, bottleMl: number, mlPerDrink: number) {
+    if (valueMl <= 0 || mlPerDrink <= 0) return { isShort: false, n: 0 };
+    const rounded = Math.round(valueMl);
+    const rawRatio = rounded / bottleMl;
+    const frac = rawRatio - Math.floor(rawRatio);
+    if (frac <= 0 || frac > 0.25) return { isShort: false, n: 0 };
+    const shortfallMl = rounded - Math.floor(rawRatio) * bottleMl;
+    return { isShort: true, n: Math.ceil(shortfallMl / mlPerDrink) };
+  }
+
+  const bebidaMlPerDrink = totalDrinks > 0 ? results.bebidaMl / totalDrinks : 0;
+  const piscoShort = shortfallInfo(results.liquorMl, piscoBottleMl, normalPiscoMlPerDrink);
+  const bebidaShort = shortfallInfo(results.bebidaMl, sodaBottleMl, bebidaMlPerDrink);
+  const iceShort = shortfallInfo(results.iceMl, 1090, 120);
+
+  function buildShortageMsg(pisco: boolean, bebida: boolean, ice: boolean, n: number): string {
+    const ultimo = n === 1 ? 'El último trago' : `Los últimos ${n} tragos`;
+    const puede = n === 1 ? 'puede' : 'pueden';
+    if (pisco && bebida && ice) return `${ultimo} ${puede} quedar cortos en todo`;
+    if (pisco && bebida)        return `${ultimo} ${puede} quedar con menos líquido`;
+    if (pisco && ice)           return `${ultimo} ${puede} quedar más suave${n > 1 ? 's' : ''} y sin hielo`;
+    if (bebida && ice)          return `${ultimo} ${puede} quedar más fuerte${n > 1 ? 's' : ''} y sin hielo`;
+    if (pisco)  return `${ultimo} ${puede} quedar más suave${n > 1 ? 's' : ''}`;
+    if (bebida) return `${ultimo} ${puede} quedar más fuerte${n > 1 ? 's' : ''}`;
+    if (ice)    return `${n === 1 ? '1 trago puede' : `${n} tragos pueden`} quedar sin hielo`;
+    return '';
+  }
+
+  const anyShort = piscoShort.isShort || bebidaShort.isShort || iceShort.isShort;
+  const maxN = Math.max(piscoShort.n, bebidaShort.n, iceShort.n);
+  const shortageMsg = anyShort
+    ? buildShortageMsg(piscoShort.isShort, bebidaShort.isShort, iceShort.isShort, maxN)
+    : '';
 
   /* ── Navigation ── */
 
@@ -120,11 +169,61 @@ export default function CalculatorScreen() {
 
   const [copied, setCopied] = useState(false);
 
+  const notifOpacity = useRef(new Animated.Value(0)).current;
+  const notifTranslateX = useRef(new Animated.Value(0)).current;
+  const notifTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const notifTranslateY = notifOpacity.interpolate({ inputRange: [0, 1], outputRange: [-16, 0] });
+  const [notifVisible, setNotifVisible] = useState(false);
+  const [displayMsg, setDisplayMsg] = useState('');
+
+  const dismiss = useCallback(() => {
+    if (notifTimeout.current) clearTimeout(notifTimeout.current);
+    Animated.parallel([
+      Animated.timing(notifOpacity, { toValue: 0, duration: 250, useNativeDriver: true }),
+      Animated.timing(notifTranslateX, { toValue: 0, duration: 250, useNativeDriver: true }),
+    ]).start(() => setNotifVisible(false));
+  }, [notifOpacity, notifTranslateX]);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gs) =>
+        Math.abs(gs.dx) > 8 && Math.abs(gs.dx) > Math.abs(gs.dy),
+      onPanResponderMove: (_, gs) => notifTranslateX.setValue(gs.dx),
+      onPanResponderRelease: (_, gs) => {
+        if (Math.abs(gs.dx) > 80) {
+          if (notifTimeout.current) clearTimeout(notifTimeout.current);
+          Animated.parallel([
+            Animated.timing(notifTranslateX, { toValue: gs.dx > 0 ? 500 : -500, duration: 220, useNativeDriver: true }),
+            Animated.timing(notifOpacity, { toValue: 0, duration: 220, useNativeDriver: true }),
+          ]).start(() => { notifTranslateX.setValue(0); setNotifVisible(false); });
+        } else {
+          Animated.spring(notifTranslateX, { toValue: 0, useNativeDriver: true }).start();
+        }
+      },
+    })
+  ).current;
+
+  useEffect(() => {
+    if (currentStep !== 3 || !anyShort) {
+      dismiss();
+      return;
+    }
+    if (shortageMsg) setDisplayMsg(shortageMsg);
+    if (notifTimeout.current) clearTimeout(notifTimeout.current);
+    notifTranslateX.setValue(0);
+    notifOpacity.setValue(0);
+    setNotifVisible(true);
+    Animated.timing(notifOpacity, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+    notifTimeout.current = setTimeout(dismiss, 5000);
+    return () => { if (notifTimeout.current) clearTimeout(notifTimeout.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, anyShort, shortageMsg]);
+
   const handleCopy = async () => {
     const smartCount = (ml: number, bottleMl: number) => {
       const raw = Math.round(ml) / bottleMl;
       const frac = raw - Math.floor(raw);
-      return Math.max(1, frac > 0 && frac <= 0.10 ? Math.floor(raw) : Math.ceil(raw));
+      return Math.max(1, frac > 0 && frac <= 0.25 ? Math.floor(raw) : Math.ceil(raw));
     };
     const piscoCount = smartCount(results.liquorMl, piscoBottleMl);
     const sodaCount = smartCount(results.bebidaMl, sodaBottleMl);
@@ -290,13 +389,23 @@ export default function CalculatorScreen() {
   ];
 
   return (
-    <StepContainer
-      ref={containerRef}
-      steps={steps}
-      currentStep={currentStep}
-      direction={direction}
-      onBack={goBack}
-    />
+    <View style={{ flex: 1 }}>
+      <StepContainer
+        ref={containerRef}
+        steps={steps}
+        currentStep={currentStep}
+        direction={direction}
+        onBack={goBack}
+      />
+      <Animated.View
+        pointerEvents={notifVisible ? "box-only" : "none"}
+        style={[styles.notification, { opacity: notifOpacity, transform: [{ translateY: notifTranslateY }, { translateX: notifTranslateX }] }]}
+        {...panResponder.panHandlers}
+      >
+        <MaterialCommunityIcons name="alert-circle-outline" size={16} color="#F5A623" />
+        <Text style={styles.notificationText}>{displayMsg}</Text>
+      </Animated.View>
+    </View>
   );
 }
 
@@ -372,6 +481,33 @@ const styles = StyleSheet.create({
   resetBtnText: {
     fontSize: 15,
     color: "#666",
+    fontWeight: "500",
+  },
+  notification: {
+    position: "absolute",
+    top: 55,
+    left: 16,
+    right: 16,
+    zIndex: 999,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#fff8ee",
+    borderWidth: 1,
+    borderColor: "#F5A623",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  notificationText: {
+    flex: 1,
+    fontSize: 13,
+    color: "#b36b00",
     fontWeight: "500",
   },
 });

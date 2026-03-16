@@ -23,12 +23,9 @@ function formatSize(ml: number): string {
 }
 
 function formatVolume(ml: number): string {
-  const liters = Math.floor(ml / 1000);
-  const remainder = ml % 1000;
-  if (liters === 0) return `${ml} mL`;
-  if (remainder === 0) return `${liters} L`;
-  return `${liters} L ${remainder} mL`;
+  return `${(ml / 1000).toFixed(2)}L`;
 }
+
 
 const DEFAULT_UNIT: Unit = { singular: 'botella', plural: 'botellas' };
 
@@ -45,8 +42,8 @@ export default function ResultCard({
   const rounded = Math.round(valueMl);
   const rawRatio = rounded / selectedBottleMl;
   const fractional = rawRatio - Math.floor(rawRatio);
-  // If we'd only use ≤10% of the last bottle, round down to avoid recommending an extra one
-  const smartRoundDown = fractional > 0 && fractional <= 0.10;
+  // If we'd only use ≤25% of the last bottle, round down instead of recommending an extra one
+  const smartRoundDown = fractional > 0 && fractional <= 0.25;
   const count = Math.max(1, smartRoundDown ? Math.floor(rawRatio) : Math.ceil(rawRatio));
   const diffMl = count * selectedBottleMl - rounded; // positive = surplus, negative = shortage
   const diffPct = Math.round(Math.abs(diffMl / selectedBottleMl) * 100);
