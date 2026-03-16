@@ -5,6 +5,7 @@ export const LEVEL_LABELS: Record<DrinkLevel, string> = {
   "normal":       "Normal",
   "'algo piola'": "''Algo piola''",
   "desquiciado":    "Desquiciado",
+  "personalizado":  "Personalizado",
 };
 
 export const LEVEL_RATIOS: Record<DrinkLevel, { liquor: number; soda: number }> = {
@@ -12,6 +13,7 @@ export const LEVEL_RATIOS: Record<DrinkLevel, { liquor: number; soda: number }> 
   "normal":       { liquor: 0.4, soda: 0.6 },
   "'algo piola'": { liquor: 0.5, soda: 0.5 },
   "desquiciado":    { liquor: 0.7, soda: 0.3 },
+  "personalizado":  { liquor: 1, soda: 0 },
 };
 
 // Single source of truth for glass types: label, volume, and image

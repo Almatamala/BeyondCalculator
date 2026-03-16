@@ -4,21 +4,23 @@ import {
   Modal,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
-  ViewStyle,
+  ViewStyle
 } from "react-native";
 
 import { LEVEL_LABELS, LEVEL_RATIOS } from "@/constants/drinks";
 import { DrinkLevel } from "@/types/calculator";
 
-const LEVELS: DrinkLevel[] = ["algo piola", "normal", "'algo piola'", "desquiciado"];
+const LEVELS: DrinkLevel[] = ["algo piola", "normal", "'algo piola'", "desquiciado", "personalizado"];
 
 const LEVEL_ICON: Record<DrinkLevel, { name: React.ComponentProps<typeof MaterialCommunityIcons>["name"]; color: string }> = {
   "algo piola": { name: "leaf", color: "#4CAF50" },
   normal: { name: "glass-cocktail", color: "#F5A623" },
   "'algo piola'": { name: "fire", color: "#E53935" },
   desquiciado: { name: "skull-outline", color: "#282828" },
+  personalizado: { name: "tune", color: "#9C27B0" },
 };
 
 const LEVEL_DESC: Record<DrinkLevel, string> = {
@@ -26,6 +28,7 @@ const LEVEL_DESC: Record<DrinkLevel, string> = {
   normal: "La de siempre",
   "'algo piola'": "Pa' valientes",
   desquiciado: "Objetivo : apagar tele",
+  personalizado: "hace voh la wea",
 };
 
 interface Props {
@@ -42,7 +45,21 @@ export default function LevelPicker({
   style,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const liquorPct = Math.round(LEVEL_RATIOS[value].liquor * 100);
+  const [customPercentage, setCustomPercentage] = useState(100);
+  const [editingPersonalizado, setEditingPersonalizado] = useState(false);
+  const liquorPct = value === "personalizado" ? customPercentage : Math.round(LEVEL_RATIOS[value].liquor * 100);
+
+  const handlePersonalizadoPercentageChange = (text: string) => {
+    const percentage = parseInt(text) || 0;
+    const clampedPercentage = Math.max(0, Math.min(100, percentage));
+    setCustomPercentage(clampedPercentage);
+  };
+
+  const handlePersonalizadoSubmit = () => {
+    setEditingPersonalizado(false);
+    onChange("personalizado");
+    setOpen(false);
+  };
 
   const select = (
     <TouchableOpacity
@@ -83,8 +100,12 @@ export default function LevelPicker({
                   style={[styles.option, active && styles.optionActive]}
                   activeOpacity={0.7}
                   onPress={() => {
-                    onChange(level);
-                    setOpen(false);
+                    if (level === "personalizado") {
+                      setEditingPersonalizado(true);
+                    } else {
+                      onChange(level);
+                      setOpen(false);
+                    }
                   }}
                 >
                   <View style={styles.optionIconWrap}>
@@ -112,14 +133,35 @@ export default function LevelPicker({
                       {LEVEL_DESC[level]}
                     </Text>
                   </View>
-                  <Text
-                    style={[
-                      styles.optionRatio,
-                      active && styles.optionRatioActive,
-                    ]}
-                  >
-                    {Math.round(LEVEL_RATIOS[level].liquor * 100)}%
-                  </Text>
+                  {level === "personalizado" && editingPersonalizado ? (
+                    <View style={styles.optionRatioContainer}>
+                      <TextInput
+                        style={[
+                          styles.optionRatio,
+                          styles.optionRatioInput,
+                          active && styles.optionRatioActive,
+                        ]}
+                        value={customPercentage.toString()}
+                        onChangeText={handlePersonalizadoPercentageChange}
+                        keyboardType="numeric"
+                        maxLength={3}
+                        selectTextOnFocus
+                        returnKeyType="done"
+                        onSubmitEditing={handlePersonalizadoSubmit}
+                        autoFocus
+                      />
+                      <Text style={[styles.optionRatio, active && styles.optionRatioActive]}>%</Text>
+                    </View>
+                  ) : (
+                    <Text
+                      style={[
+                        styles.optionRatio,
+                        active && styles.optionRatioActive,
+                      ]}
+                    >
+                      {level === "personalizado" ? customPercentage : Math.round(LEVEL_RATIOS[level].liquor * 100)}%
+                    </Text>
+                  )}
                 </TouchableOpacity>
               );
             })}
@@ -243,5 +285,20 @@ const styles = StyleSheet.create({
   },
   optionRatioActive: {
     color: "rgba(255,255,255,0.85)",
+  },
+  optionRatioContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  optionRatioInput: {
+    minWidth: 40,
+    textAlign: "center",
+    padding: 0,
+    margin: 0,
+    borderWidth: 0,
+    backgroundColor: "transparent",
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#222",
   },
 });
