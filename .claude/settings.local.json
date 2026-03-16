@@ -3,7 +3,8 @@
     "allow": [
       "Bash(tree:*)",
       "Bash(find:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npx expo:*)"
     ]
   }
 }

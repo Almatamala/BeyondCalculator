@@ -32,7 +32,18 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
   const [state, setState] = useState<CalculatorState>(initialState);
 
   const setMode = (mode: Mode) =>
-    setState(s => ({ ...s, mode }));
+    setState(s => {
+      if (mode === "personalized" && s.people.length === 0) {
+        const firstPerson: Person = {
+          id: String(Date.now()),
+          name: "Weon/a 1",
+          level: "normal",
+          drinksPerPerson: 3,
+        };
+        return { ...s, mode, people: [firstPerson] };
+      }
+      return { ...s, mode };
+    });
 
   const setPeopleCount = (peopleCount: number) =>
     setState(s => ({ ...s, peopleCount }));

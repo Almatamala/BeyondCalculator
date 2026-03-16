@@ -45,9 +45,11 @@ export default function PersonList({
               placeholder="Nombre"
               placeholderTextColor="#aaa"
             />
-            <TouchableOpacity style={styles.removeBtn} onPress={() => onRemove(person.id)}>
-              <Text style={styles.removeBtnText}>×</Text>
-            </TouchableOpacity>
+            {people.length > 1 && (
+              <TouchableOpacity style={styles.removeBtn} onPress={() => onRemove(person.id)}>
+                <Text style={styles.removeBtnText}>×</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* level + drinks row, indented under name */}
@@ -65,6 +67,7 @@ export default function PersonList({
                 value={person.drinksPerPerson}
                 onChange={count => onDrinksChange(person.id, count)}
                 alignItems="flex-start"
+                compact
               />
             </View>
           </View>

@@ -1,50 +1,94 @@
-# Welcome to your Expo app 👋
+# BeyondCalculator - Calculadora de Piscolas
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Calculadora mobile para saber exactamente cuanto pisco, bebida y hielo comprar para tu junta. Ingresa la cantidad de personas, cuantos vasos tomara cada uno y el nivel de pisco, y la app te dice cuantas botellas y kilos de hielo necesitas.
 
-## Get started
+## Tech Stack
 
-1. Install dependencies
+- **React Native 0.81** con **Expo SDK 54** (New Architecture habilitada)
+- **TypeScript 5.9**
+- **Expo Router 6** (file-based routing)
+- **NativeWind 4 / TailwindCSS 3** (styling parcial, la mayoria usa `StyleSheet`)
+- **React Native Reanimated 4** (animaciones de transicion entre pasos)
+- **React Compiler** habilitado via Expo experiments
 
-   ```bash
-   npm install
-   ```
+## Arquitectura
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+app/                  # Screens (Expo Router file-based routing)
+  calculator/
+    index.tsx         # Pantalla principal - orquesta los 4 pasos
+components/
+  calculator/         # Componentes especificos de la calculadora
+    ModeSelector      # Paso 0: todos lo mismo vs personalizado
+    LevelPicker       # Modal de seleccion de nivel de pisco
+    GlassSelector     # Paso 2: tipo de vaso (rojo 473ml / vidrio 350ml)
+    ResultCard        # Tarjeta de resultado con selector de tamano de botella
+    PersonList        # Lista de personas (modo personalizado)
+  StepContainer       # Navegacion por pasos con animaciones slide
+  countPicker         # Incremento/decremento con input directo
+constants/
+  drinks.ts           # Ratios de pisco/bebida por nivel, config de vasos
+  theme.ts            # Colores del tema
+context/
+  CalculatorContext    # Estado global de la calculadora (React Context)
+types/
+  calculator.ts       # Tipos: Mode, DrinkLevel, GlassType, Person, CalculatorState
+utils/
+  calculations.ts     # Logica de calculo (volumen util, pisco, bebida, hielo)
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Flujo de la calculadora (4 pasos)
 
-## Learn more
+1. **Modo** - Todos lo mismo o personalizado (auto-avanza al seleccionar)
+2. **Datos** - Cantidad de personas, vasos por persona, nivel de pisco
+3. **Vaso** - Vaso rojo (473ml) o vaso de vidrio (350ml) (auto-avanza)
+4. **Resultado** - Botellas de pisco, bebida y kg de hielo con selector de tamano
 
-To learn more about developing your project with Expo, look at the following resources:
+### Logica de calculo
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- El vaso se llena al 90% (`FILL_RATIO = 0.9`)
+- Cada trago desplaza 120ml de hielo (`ICE_ML_PER_DRINK = 120`)
+- Volumen util = `vaso * 0.9 - 120ml`
+- Niveles: algo piola (20% pisco), normal (30%), "algo piola" (45%)
 
-## Join the community
+## Desarrollo
 
-Join our community of developers creating universal apps.
+### Requisitos previos
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Node.js 18+
+- Expo CLI (`npx expo`)
+- Para dispositivo fisico: [Expo Go](https://expo.dev/go) o un [development build](https://docs.expo.dev/develop/development-builds/introduction/)
+
+### Instalacion
+
+```bash
+npm install
+```
+
+### Iniciar en desarrollo
+
+```bash
+npx expo start
+```
+
+Opciones disponibles:
+- **Android**: `npx expo start --android` o presionar `a` en la terminal
+- **iOS**: `npx expo start --ios` o presionar `i` en la terminal
+- **Web**: `npx expo start --web` o presionar `w` en la terminal
+- **Tunnel**: `npx expo start --tunnel` para compartir el QR via ngrok (util cuando el dispositivo no esta en la misma red)
+
+### Build de produccion
+
+```bash
+# Android
+eas build --platform android
+
+# iOS
+eas build --platform ios
+```
+
+### Linting
+
+```bash
+npm run lint
+```

@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
   Modal,
@@ -13,10 +14,10 @@ import { DrinkLevel } from "@/types/calculator";
 
 const LEVELS: DrinkLevel[] = ["algo piola", "normal", "'algo piola'"];
 
-const LEVEL_EMOJI: Record<DrinkLevel, string> = {
-  "algo piola": "🌿",
-  normal: "🍹",
-  "'algo piola'": "🔥",
+const LEVEL_ICON: Record<DrinkLevel, { name: React.ComponentProps<typeof MaterialCommunityIcons>["name"]; color: string }> = {
+  "algo piola": { name: "leaf", color: "#4CAF50" },
+  normal: { name: "glass-cocktail", color: "#F5A623" },
+  "'algo piola'": { name: "fire", color: "#E53935" },
 };
 
 const LEVEL_DESC: Record<DrinkLevel, string> = {
@@ -28,50 +29,36 @@ const LEVEL_DESC: Record<DrinkLevel, string> = {
 interface Props {
   value: DrinkLevel;
   onChange: (level: DrinkLevel) => void;
-  layout?: "row" | "column";
+  centered?: boolean;
   style?: ViewStyle;
 }
 
 export default function LevelPicker({
   value,
   onChange,
-  layout = "row",
+  centered = false,
   style,
 }: Props) {
   const [open, setOpen] = useState(false);
   const liquorPct = Math.round(LEVEL_RATIOS[value].liquor * 100);
 
-  const select =
-    layout === "column" ? (
-      <TouchableOpacity
-        style={[styles.select, styles.selectCentered]}
-        onPress={() => setOpen(true)}
-      >
-        <Text style={styles.selectEmoji}>{LEVEL_EMOJI[value]}</Text>
-        <Text style={styles.selectText}>{LEVEL_LABELS[value]}</Text>
-        <Text style={[styles.chevron, styles.chevronRight]}>▾</Text>
-      </TouchableOpacity>
-    ) : (
-      <TouchableOpacity style={styles.select} onPress={() => setOpen(true)}>
-        <Text style={styles.selectEmoji}>{LEVEL_EMOJI[value]}</Text>
-        <Text style={styles.selectText}>{LEVEL_LABELS[value]}</Text>
-        <Text style={styles.chevron}>▾</Text>
-      </TouchableOpacity>
-    );
+  const select = (
+    <TouchableOpacity
+      style={[styles.select, centered && styles.selectCentered]}
+      onPress={() => setOpen(true)}
+    >
+      <MaterialCommunityIcons name={LEVEL_ICON[value].name} size={16} color={LEVEL_ICON[value].color} />
+      <Text style={styles.selectText}>{LEVEL_LABELS[value]}</Text>
+      <Text style={[styles.chevron, centered && styles.chevronRight]}>▾</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <>
-      {layout === "row" ? (
-        <View style={[styles.rowContainer, style]}>
-          {select}
-          <Text style={styles.ratio}>{liquorPct}% pisco</Text>
-        </View>
-      ) : (
-        <View style={[styles.colContainer, style]}>
-          {select}
-          <Text style={styles.ratioBelow}>{liquorPct}% pisco</Text>
-        </View>
-      )}
+      <View style={[styles.colContainer, style]}>
+        {select}
+        <Text style={styles.ratioBelow}>{liquorPct}% pisco por vaso</Text>
+      </View>
 
       <Modal
         transparent
@@ -98,7 +85,13 @@ export default function LevelPicker({
                     setOpen(false);
                   }}
                 >
-                  <Text style={styles.optionEmoji}>{LEVEL_EMOJI[level]}</Text>
+                  <View style={styles.optionIconWrap}>
+                    <MaterialCommunityIcons
+                      name={LEVEL_ICON[level].name}
+                      size={28}
+                      color={active ? "#fff" : LEVEL_ICON[level].color}
+                    />
+                  </View>
                   <View style={styles.optionText}>
                     <Text
                       style={[
@@ -136,11 +129,6 @@ export default function LevelPicker({
 }
 
 const styles = StyleSheet.create({
-  rowContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
   colContainer: {
     alignItems: "stretch",
     gap: 4,
@@ -160,9 +148,6 @@ const styles = StyleSheet.create({
   selectCentered: {
     justifyContent: "center",
   },
-  selectEmoji: {
-    fontSize: 16,
-  },
   selectText: {
     fontSize: 14,
     color: "#333",
@@ -175,11 +160,6 @@ const styles = StyleSheet.create({
   chevron: {
     fontSize: 16,
     color: "#888",
-  },
-  ratio: {
-    fontSize: 13,
-    color: "#333",
-    opacity: 0.35,
   },
   ratioBelow: {
     fontSize: 12,
@@ -231,10 +211,9 @@ const styles = StyleSheet.create({
   optionActive: {
     backgroundColor: "#F5A623",
   },
-  optionEmoji: {
-    fontSize: 28,
+  optionIconWrap: {
     width: 36,
-    textAlign: "center",
+    alignItems: "center",
   },
   optionText: {
     flex: 1,
@@ -258,7 +237,7 @@ const styles = StyleSheet.create({
   optionRatio: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#ccc",
+    color: "#222",
   },
   optionRatioActive: {
     color: "rgba(255,255,255,0.85)",

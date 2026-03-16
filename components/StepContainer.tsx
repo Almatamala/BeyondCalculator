@@ -199,6 +199,8 @@ const styles = StyleSheet.create({
   },
   contentWrapper: {
     overflow: "hidden",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
   },
   cardContent: {
     padding: 16,

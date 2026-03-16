@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -19,7 +20,13 @@ export default function ModeSelector({ value, onSelect }: Props) {
         onPress={() => onSelect("same")}
         activeOpacity={0.85}
       >
-        <Text style={styles.emoji}>🍻</Text>
+        <View style={styles.iconWrap}>
+          <MaterialCommunityIcons
+            name="beer"
+            size={28}
+            color={isSame ? "#fff" : "#F5A623"}
+          />
+        </View>
         <View style={styles.textGroup}>
           <Text style={[styles.title, isSame ? styles.titleLight : styles.titleDark]}>
             Todos lo mismo
@@ -35,7 +42,13 @@ export default function ModeSelector({ value, onSelect }: Props) {
         onPress={() => onSelect("personalized")}
         activeOpacity={0.85}
       >
-        <Text style={styles.emoji}>🙋</Text>
+        <View style={styles.iconWrap}>
+          <MaterialCommunityIcons
+            name="account-group"
+            size={28}
+            color={isPersonalized ? "#fff" : "#F5A623"}
+          />
+        </View>
         <View style={styles.textGroup}>
           <Text style={[styles.title, isPersonalized ? styles.titleLight : styles.titleDark]}>
             Personalizado
@@ -70,8 +83,9 @@ const styles = StyleSheet.create({
     borderColor: "#F5A623",
     backgroundColor: "#F5A623",
   },
-  emoji: {
-    fontSize: 28,
+  iconWrap: {
+    width: 36,
+    alignItems: "center",
   },
   textGroup: {
     gap: 2,

@@ -1,3 +1,4 @@
+import * as Clipboard from "expo-clipboard";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useRef, useState } from "react";
 import {
@@ -8,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import GlassSelector from "@/components/calculator/GlassSelector";
 import LevelPicker from "@/components/calculator/LevelPicker";
@@ -111,8 +113,42 @@ export default function CalculatorScreen() {
     reset();
     setPiscoBottleMl(1000);
     setSodaBottleMl(3000);
+    setCopied(false);
     setDirection("backward");
     setCurrentStep(0);
+  };
+
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    const smartCount = (ml: number, bottleMl: number) => {
+      const raw = Math.round(ml) / bottleMl;
+      const frac = raw - Math.floor(raw);
+      return Math.max(1, frac > 0 && frac <= 0.10 ? Math.floor(raw) : Math.ceil(raw));
+    };
+    const piscoCount = smartCount(results.liquorMl, piscoBottleMl);
+    const sodaCount = smartCount(results.bebidaMl, sodaBottleMl);
+    const iceKg = Math.ceil(results.iceMl / 1090);
+
+    const piscoSize = piscoBottleMl >= 1000 ? `${piscoBottleMl / 1000}L` : `${piscoBottleMl}mL`;
+    const sodaSize = sodaBottleMl >= 1000 ? `${sodaBottleMl / 1000}L` : `${sodaBottleMl}mL`;
+
+    const piscoEmojis = "🍾".repeat(piscoCount);
+    const sodaEmojis = "🥤".repeat(sodaCount);
+    const iceEmojis = "🧊".repeat(iceKg);
+
+    const piscoLabel = piscoCount === 1 ? "Pisco" : "Piscos";
+    const sodaLabel = sodaCount === 1 ? "Bebida" : "Bebidas";
+
+    const message = [
+      `${piscoEmojis} ${piscoCount} ${piscoLabel} de ${piscoSize}`,
+      `${sodaEmojis} ${sodaCount} ${sodaLabel} de ${sodaSize}`,
+      `${iceEmojis} ${iceKg}kg de hielo`,
+    ].join("\n");
+
+    await Clipboard.setStringAsync(message);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   /* ── Auto-advance handlers (feedback visual → slide) ── */
@@ -176,7 +212,7 @@ export default function CalculatorScreen() {
                 <LevelPicker
                   value={state.level}
                   onChange={setLevel}
-                  layout="column"
+                  centered
                   style={{ width: 150, height: 60 }}
                 />
               </View>
@@ -233,9 +269,21 @@ export default function CalculatorScreen() {
             unit={{ singular: "bolsa de 1 kg", plural: "bolsas de 1 kg" }}
             totalLabel={`${(results.iceMl / 1090).toFixed(1)} kg`}
           />
-          <TouchableOpacity style={styles.resetBtn} onPress={handleReset}>
-            <Text style={styles.resetBtnText}>Empezar de nuevo</Text>
-          </TouchableOpacity>
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={styles.resetBtn} onPress={handleReset}>
+              <Text style={styles.resetBtnText}>Empezar de nuevo</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.copyBtn} onPress={handleCopy} activeOpacity={0.8}>
+              <MaterialCommunityIcons
+                name={copied ? "check" : "clipboard-text-outline"}
+                size={18}
+                color={copied ? "#4CAF50" : "#666"}
+              />
+              <Text style={[styles.copyBtnText, copied && styles.copyBtnTextDone]}>
+                {copied ? "Copiado" : "Copiar"}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       ),
     },
@@ -289,7 +337,32 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#fff",
   },
+  actionRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  copyBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderWidth: 1.5,
+    borderColor: "#ddd",
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  copyBtnText: {
+    fontSize: 14,
+    color: "#666",
+    fontWeight: "500",
+  },
+  copyBtnTextDone: {
+    color: "#4CAF50",
+  },
   resetBtn: {
+    flex: 1,
     borderWidth: 1.5,
     borderColor: "#ddd",
     borderRadius: 14,

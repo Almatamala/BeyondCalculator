@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -21,6 +22,14 @@ function formatSize(ml: number): string {
   return ml >= 1000 ? `${ml / 1000} L` : `${ml} ml`;
 }
 
+function formatVolume(ml: number): string {
+  const liters = Math.floor(ml / 1000);
+  const remainder = ml % 1000;
+  if (liters === 0) return `${ml} mL`;
+  if (remainder === 0) return `${liters} L`;
+  return `${liters} L ${remainder} mL`;
+}
+
 const DEFAULT_UNIT: Unit = { singular: 'botella', plural: 'botellas' };
 
 export default function ResultCard({
@@ -34,9 +43,13 @@ export default function ResultCard({
   totalLabel,
 }: Props) {
   const rounded = Math.round(valueMl);
-  const count = Math.ceil(valueMl / selectedBottleMl);
-  const leftoverMl = count * selectedBottleMl - rounded;
-  const leftoverPct = Math.round((leftoverMl / selectedBottleMl) * 100);
+  const rawRatio = rounded / selectedBottleMl;
+  const fractional = rawRatio - Math.floor(rawRatio);
+  // If we'd only use ≤10% of the last bottle, round down to avoid recommending an extra one
+  const smartRoundDown = fractional > 0 && fractional <= 0.10;
+  const count = Math.max(1, smartRoundDown ? Math.floor(rawRatio) : Math.ceil(rawRatio));
+  const diffMl = count * selectedBottleMl - rounded; // positive = surplus, negative = shortage
+  const diffPct = Math.round(Math.abs(diffMl / selectedBottleMl) * 100);
   const unitLabel = count === 1 ? unit.singular : unit.plural;
 
   return (
@@ -44,7 +57,7 @@ export default function ResultCard({
       <View style={styles.header}>
         <Text style={styles.label}>{label}</Text>
         {!hideVolume && (
-          <Text style={styles.total}>{totalLabel ?? `${rounded} ml`}</Text>
+          <Text style={styles.total}>{totalLabel ?? formatVolume(rounded)}</Text>
         )}
       </View>
 
@@ -75,10 +88,15 @@ export default function ResultCard({
         {bottleSizes.length === 1 && !hideVolume && (
           <Text style={styles.sizeHint}>{formatSize(selectedBottleMl)} por {unit.singular}</Text>
         )}
-        {leftoverPct > 0 ? (
-          <Text style={styles.leftover}>Te sobra ~{leftoverPct}% de una {unit.singular}</Text>
+        {diffMl > 0 ? (
+          <Text style={styles.leftover}>Te sobra ~{diffPct}% de una {unit.singular}</Text>
+        ) : diffMl < 0 ? (
+          <Text style={styles.shortage}>Te falta ~{diffPct}% de una {unit.singular}</Text>
         ) : (
-          <Text style={styles.leftoverNone}>Sin sobras 🎯</Text>
+          <View style={styles.leftoverNoneRow}>
+            <Text style={styles.leftoverNone}>Sin sobras</Text>
+            <MaterialCommunityIcons name="bullseye-arrow" size={14} color="#4CAF50" />
+          </View>
         )}
       </View>
     </View>
@@ -170,6 +188,16 @@ const styles = StyleSheet.create({
   leftover: {
     fontSize: 12,
     color: '#999',
+  },
+  shortage: {
+    fontSize: 12,
+    color: '#F5A623',
+    fontWeight: '500',
+  },
+  leftoverNoneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   leftoverNone: {
     fontSize: 12,
