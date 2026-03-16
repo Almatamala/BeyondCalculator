@@ -12,18 +12,20 @@ import {
 import { LEVEL_LABELS, LEVEL_RATIOS } from "@/constants/drinks";
 import { DrinkLevel } from "@/types/calculator";
 
-const LEVELS: DrinkLevel[] = ["algo piola", "normal", "'algo piola'"];
+const LEVELS: DrinkLevel[] = ["algo piola", "normal", "'algo piola'", "desquiciado"];
 
 const LEVEL_ICON: Record<DrinkLevel, { name: React.ComponentProps<typeof MaterialCommunityIcons>["name"]; color: string }> = {
   "algo piola": { name: "leaf", color: "#4CAF50" },
   normal: { name: "glass-cocktail", color: "#F5A623" },
   "'algo piola'": { name: "fire", color: "#E53935" },
+  desquiciado: { name: "skull-outline", color: "#282828" },
 };
 
 const LEVEL_DESC: Record<DrinkLevel, string> = {
-  "algo piola": "Mañana entro a las 9",
+  "algo piola": "Mañana entro a las 8",
   normal: "La de siempre",
-  "'algo piola'": "Pa' los valientes",
+  "'algo piola'": "Pa' valientes",
+  desquiciado: "Objetivo : apagar tele",
 };
 
 interface Props {

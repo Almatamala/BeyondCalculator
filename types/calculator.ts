@@ -1,6 +1,6 @@
 export type Mode = "same" | "personalized";
 
-export type DrinkLevel = "algo piola" | "normal" | "'algo piola'";
+export type DrinkLevel = "algo piola" | "normal" | "'algo piola'" | "desquiciado";
 
 export type GlassType = "vaso_rojo" | "vaso_vidrio";
 
