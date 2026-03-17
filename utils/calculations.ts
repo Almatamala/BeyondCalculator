@@ -1,4 +1,4 @@
-import { GLASS_CONFIG, ICE_BAG_ML, LEVEL_RATIOS } from "@/constants/drinks";
+import { GLASS_CONFIG, ICE_BAG_ML, LEVEL_RATIOS, SODA_BOTTLE_SIZES } from "@/constants/drinks";
 import { CalculatorState, ReverseState } from "@/types/calculator";
 
 // Glass is never filled to the brim
@@ -50,15 +50,24 @@ export function calculateResults(state: CalculatorState): CalculationResult {
   };
 }
 
+export interface ReverseSuggestion {
+  bebidaAddMl: number;   // 0 = no bebida suggestion
+  iceAddBags: number;    // 0 = no ice suggestion
+  newTotalDrinks: number;
+  newDrinksPerPerson: number;
+  newLeftoverDrinks: number;
+}
+
 export interface ReverseCalculationResult {
   totalDrinks: number;
   drinksPerPerson: number;
   leftoverDrinks: number;
   limitingFactor: "pisco" | "bebida" | "hielo";
+  suggestion: ReverseSuggestion | null;
 }
 
 export function calculateReverseResults(reverse: ReverseState): ReverseCalculationResult {
-  const empty: ReverseCalculationResult = { totalDrinks: 0, drinksPerPerson: 0, leftoverDrinks: 0, limitingFactor: "pisco" };
+  const empty: ReverseCalculationResult = { totalDrinks: 0, drinksPerPerson: 0, leftoverDrinks: 0, limitingFactor: "pisco", suggestion: null };
   if (!reverse.glassType) return empty;
 
   const glassMl = GLASS_CONFIG[reverse.glassType].ml;
@@ -93,5 +102,44 @@ export function calculateReverseResults(reverse: ReverseState): ReverseCalculati
   const drinksPerPerson = Math.floor(totalDrinks / reverse.peopleCount);
   const leftoverDrinks = totalDrinks % reverse.peopleCount;
 
-  return { totalDrinks, drinksPerPerson, leftoverDrinks, limitingFactor };
+  // Suggestion: what to buy to better use the pisco capacity
+  const maxFromPisco = piscoPerDrink > 0 ? Math.floor(totalPiscoMl / piscoPerDrink) : 0;
+  let bebidaAddMl = 0;
+  let iceAddBags = 0;
+
+  if (maxFromPisco > totalDrinks) {
+    if (bebidaPerDrink > 0) {
+      const shortfall = maxFromPisco * bebidaPerDrink - totalBebidaMl;
+      if (shortfall > 0) {
+        const fitting = SODA_BOTTLE_SIZES.filter((s) => s <= shortfall);
+        if (fitting.length > 0) bebidaAddMl = Math.max(...fitting);
+      }
+    }
+    if (reverse.iceInputMode === "manual") {
+      const shortfall = maxFromPisco * ICE_ML_PER_DRINK - reverse.iceKg * ICE_BAG_ML;
+      if (shortfall > 0) iceAddBags = Math.floor(shortfall / ICE_BAG_ML);
+    }
+  }
+
+  let suggestion: ReverseSuggestion | null = null;
+  if (bebidaAddMl > 0 || iceAddBags > 0) {
+    const newBebidaMl = totalBebidaMl + bebidaAddMl;
+    const newDrinksFromBebida = bebidaPerDrink > 0 ? newBebidaMl / bebidaPerDrink : Infinity;
+    const newDrinksFromIce =
+      reverse.iceInputMode === "manual"
+        ? ((reverse.iceKg + iceAddBags) * ICE_BAG_ML) / ICE_ML_PER_DRINK
+        : Infinity;
+    const newTotal = Math.floor(Math.min(drinksFromPisco, newDrinksFromBebida, newDrinksFromIce));
+    if (newTotal > totalDrinks) {
+      suggestion = {
+        bebidaAddMl,
+        iceAddBags,
+        newTotalDrinks: newTotal,
+        newDrinksPerPerson: Math.floor(newTotal / reverse.peopleCount),
+        newLeftoverDrinks: newTotal % reverse.peopleCount,
+      };
+    }
+  }
+
+  return { totalDrinks, drinksPerPerson, leftoverDrinks, limitingFactor, suggestion };
 }
