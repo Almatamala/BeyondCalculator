@@ -16,6 +16,10 @@ export let LEVEL_RATIOS: Record<DrinkLevel, { liquor: number; soda: number }> = 
   "personalizado":  { liquor: 1, soda: 0 },
 };
 
+export const PISCO_BOTTLE_SIZES = [750, 1000];
+export const SODA_BOTTLE_SIZES = [1000, 1500, 2000, 3000];
+export const ICE_BAG_ML = 1090;
+
 // Single source of truth for glass types: label, volume, and image
 export const GLASS_CONFIG: Record<GlassType, { label: string; ml: number; image: any }> = {
   vaso_rojo:   { label: "Vaso Rojo",   ml: 473, image: require("@/assets/images/vaso_rojo.webp") },

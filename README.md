@@ -1,6 +1,11 @@
 # BeyondCalculator - Calculadora de Piscolas
 
-Calculadora mobile para saber exactamente cuanto pisco, bebida y hielo comprar para tu junta. Ingresa la cantidad de personas, cuantos vasos tomara cada uno y el nivel de pisco, y la app te dice cuantas botellas y kilos de hielo necesitas.
+Calculadora mobile para juntas de piscola. Resuelve dos preguntas:
+
+| Flujo | Pregunta | Input | Output |
+|-------|----------|-------|--------|
+| **Forward** | ¿Cuánto copete compramos? | Personas, vasos, nivel | Botellas de pisco, bebida y hielo |
+| **Reverse** | ¿Cuántas piscolas nos saldrán? | Botellas disponibles, nivel, vaso | Total de vasos que salen |
 
 ## Tech Stack
 
@@ -14,42 +19,33 @@ Calculadora mobile para saber exactamente cuanto pisco, bebida y hielo comprar p
 ## Arquitectura
 
 ```
-app/                  # Screens (Expo Router file-based routing)
-  calculator/
-    index.tsx         # Pantalla principal - orquesta los 4 pasos
-components/
-  calculator/         # Componentes especificos de la calculadora
-    ModeSelector      # Paso 0: todos lo mismo vs personalizado
-    LevelPicker       # Modal de seleccion de nivel de pisco
-    GlassSelector     # Paso 2: tipo de vaso (rojo 473ml / vidrio 350ml)
-    ResultCard        # Tarjeta de resultado con selector de tamano de botella
-    PersonList        # Lista de personas (modo personalizado)
-  StepContainer       # Navegacion por pasos con animaciones slide
-  countPicker         # Incremento/decremento con input directo
-constants/
-  drinks.ts           # Ratios de pisco/bebida por nivel, config de vasos
-  theme.ts            # Colores del tema
-context/
-  CalculatorContext    # Estado global de la calculadora (React Context)
-types/
-  calculator.ts       # Tipos: Mode, DrinkLevel, GlassType, Person, CalculatorState
-utils/
-  calculations.ts     # Logica de calculo (volumen util, pisco, bebida, hielo)
+app/calculator/index.tsx     # Pantalla principal — wizard de N pasos
+components/calculator/      # Componentes de cada step
+  UseCaseSelector           # Step 0: forward vs reverse
+  ModeSelector              # Forward: todos lo mismo vs personalizado
+  BottleInput               # Reverse: card de botellas con CountPicker
+  BebidaSizeModal           # Reverse: modal para elegir tamano de bebida
+  ReverseResultCard         # Reverse: pantalla de resultado
+  LevelPicker               # Modal de seleccion de nivel
+  GlassSelector             # Tipo de vaso (rojo 473ml / vidrio 350ml)
+  ResultCard                # Forward: tarjeta de resultado
+  PersonList                # Forward: lista de personas (modo personalizado)
+StepContainer               # Navegacion por pasos con animaciones slide
+countPicker                 # Incremento/decremento con input directo
+context/CalculatorContext    # Estado global (forward + reverse)
+utils/calculations.ts       # Logica de calculo (forward + reverse)
+types/calculator.ts          # Tipos compartidos
+constants/drinks.ts          # Ratios, tamanos de botella, config de vasos
 ```
 
-### Flujo de la calculadora (4 pasos)
+### Flujos
 
-1. **Modo** - Todos lo mismo o personalizado (auto-avanza al seleccionar)
-2. **Datos** - Cantidad de personas, vasos por persona, nivel de pisco
-3. **Vaso** - Vaso rojo (473ml) o vaso de vidrio (350ml) (auto-avanza)
-4. **Resultado** - Botellas de pisco, bebida y kg de hielo con selector de tamano
+Un Step 0 global permite elegir entre ambos flujos. El wizard se arma dinámicamente.
 
-### Logica de calculo
+- **Forward** (4 steps): Modo → Datos → Vaso → Resultado (botellas + clipboard)
+- **Reverse** (6 steps): Pisco → Bebida → Hielo → Nivel+Personas → Vaso → Resultado (vasos)
 
-- El vaso se llena al 90% (`FILL_RATIO = 0.9`)
-- Cada trago desplaza 120ml de hielo (`ICE_ML_PER_DRINK = 120`)
-- Volumen util = `vaso * 0.9 - 120ml`
-- Niveles: algo piola (20% pisco), normal (30%), "algo piola" (45%)
+Ver [docs/flows.md](docs/flows.md) para detalle de cada step y [docs/design-decisions.md](docs/design-decisions.md) para las decisiones de diseno.
 
 ## Desarrollo
 
