@@ -27,8 +27,8 @@ const LEVEL_DESC: Record<DrinkLevel, string> = {
   "algo piola": "Mañana entro a las 8",
   normal: "La de siempre",
   "'algo piola'": "Pa' valientes",
-  desquiciado: "Objetivo : apagar tele",
-  personalizado: "hace voh la wea",
+  desquiciado: "Objetivo: apagar tele",
+  personalizado: "A tu pinta",
 };
 
 interface Props {
