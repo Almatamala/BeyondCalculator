@@ -132,23 +132,15 @@ export default function CalculatorScreen() {
     pisco: boolean,
     bebida: boolean,
     ice: boolean,
-    n: number,
+    _n: number,
   ): string {
-    const ultimo = n === 1 ? "El último trago" : `Los últimos ${n} tragos`;
-    const puede = n === 1 ? "puede" : "pueden";
-    if (pisco && bebida && ice)
-      return `${ultimo} ${puede} quedar cortos en todo`;
-    if (pisco && bebida) return `${ultimo} ${puede} quedar con menos líquido`;
-    if (pisco && ice)
-      return `${ultimo} ${puede} quedar más suave${n > 1 ? "s" : ""} y sin hielo`;
-    if (bebida && ice)
-      return `${ultimo} ${puede} quedar más fuerte${n > 1 ? "s" : ""} y sin hielo`;
-    if (pisco) return `${ultimo} ${puede} quedar más suave${n > 1 ? "s" : ""}`;
-    if (bebida)
-      return `${ultimo} ${puede} quedar más fuerte${n > 1 ? "s" : ""}`;
-    if (ice)
-      return `${n === 1 ? "1 trago puede" : `${n} tragos pueden`} quedar sin hielo`;
-    return "";
+    const items = ([pisco && "pisco", bebida && "bebida", ice && "hielo"] as (string | false)[]).filter(Boolean) as string[];
+    if (items.length === 0) return "";
+    const list =
+      items.length === 1
+        ? items[0]
+        : items.slice(0, -1).join(", ") + " y " + items[items.length - 1];
+    return `Les va a faltar un poco de ${list}. Ahi ven ustedes si compran mas.`;
   }
 
   const anyShort =
