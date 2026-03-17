@@ -53,11 +53,16 @@ export default function LevelPicker({
     const percentage = parseInt(text) || 0;
     const clampedPercentage = Math.max(0, Math.min(100, percentage));
     setCustomPercentage(clampedPercentage);
+    
+    // Actualizar LEVEL_RATIOS con el nuevo porcentaje
+    LEVEL_RATIOS["personalizado"] = {
+      liquor: clampedPercentage / 100,
+      soda: (100 - clampedPercentage) / 100
+    };
   };
 
   const handlePersonalizadoSubmit = () => {
     setEditingPersonalizado(false);
-    onChange("personalizado");
     setOpen(false);
   };
 
@@ -101,6 +106,7 @@ export default function LevelPicker({
                   activeOpacity={0.7}
                   onPress={() => {
                     if (level === "personalizado") {
+                      onChange("personalizado");
                       setEditingPersonalizado(true);
                     } else {
                       onChange(level);

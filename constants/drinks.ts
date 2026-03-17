@@ -8,7 +8,7 @@ export const LEVEL_LABELS: Record<DrinkLevel, string> = {
   "personalizado":  "Personalizado",
 };
 
-export const LEVEL_RATIOS: Record<DrinkLevel, { liquor: number; soda: number }> = {
+export let LEVEL_RATIOS: Record<DrinkLevel, { liquor: number; soda: number }> = {
   "algo piola":   { liquor: 0.3, soda: 0.7 },
   "normal":       { liquor: 0.4, soda: 0.6 },
   "'algo piola'": { liquor: 0.5, soda: 0.5 },
