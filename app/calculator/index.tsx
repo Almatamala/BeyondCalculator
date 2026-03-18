@@ -6,7 +6,6 @@ import {
   Alert,
   Animated,
   BackHandler,
-  Modal,
   PanResponder,
   StyleSheet,
   Text,
@@ -40,7 +39,13 @@ import {
   SODA_BOTTLE_SIZES,
 } from "@/constants/drinks";
 import { useCalculator } from "@/context/CalculatorContext";
-import { GlassType, Mode, PromoExtraMode, ReverseInputMode, UseCase } from "@/types/calculator";
+import {
+  GlassType,
+  Mode,
+  PromoExtraMode,
+  ReverseInputMode,
+  UseCase,
+} from "@/types/calculator";
 import {
   calculateResults,
   calculateReverseResults,
@@ -91,7 +96,7 @@ export default function CalculatorScreen() {
   const containerRef = useRef<StepContainerRef>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
-  const [infoModalVisible, setInfoModalVisible] = useState(false);
+  const [infoVisible, setInfoVisible] = useState(false);
 
   const [piscoBottleMl, setPiscoBottleMl] = useState(1000);
   const [sodaBottleMl, setSodaBottleMl] = useState(3000);
@@ -282,6 +287,13 @@ export default function CalculatorScreen() {
   const [notifVisible, setNotifVisible] = useState(false);
   const [displayMsg, setDisplayMsg] = useState("");
 
+  const infoOpacity = useRef(new Animated.Value(0)).current;
+  const infoTranslateX = useRef(new Animated.Value(0)).current;
+  const infoTranslateY = infoOpacity.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-16, 0],
+  });
+
   const dismiss = useCallback(() => {
     if (notifTimeout.current) clearTimeout(notifTimeout.current);
     Animated.parallel([
@@ -330,6 +342,64 @@ export default function CalculatorScreen() {
       },
     }),
   ).current;
+
+  const dismissInfo = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(infoOpacity, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(infoTranslateX, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start(() => setInfoVisible(false));
+  }, [infoOpacity, infoTranslateX]);
+
+  const infoPanResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gs) =>
+        Math.abs(gs.dx) > 8 && Math.abs(gs.dx) > Math.abs(gs.dy),
+      onPanResponderMove: (_, gs) => infoTranslateX.setValue(gs.dx),
+      onPanResponderRelease: (_, gs) => {
+        if (Math.abs(gs.dx) > 80) {
+          Animated.parallel([
+            Animated.timing(infoTranslateX, {
+              toValue: gs.dx > 0 ? 500 : -500,
+              duration: 220,
+              useNativeDriver: true,
+            }),
+            Animated.timing(infoOpacity, {
+              toValue: 0,
+              duration: 220,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            infoTranslateX.setValue(0);
+            setInfoVisible(false);
+          });
+        } else {
+          Animated.spring(infoTranslateX, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    }),
+  ).current;
+
+  const showInfo = useCallback(() => {
+    infoTranslateX.setValue(0);
+    infoOpacity.setValue(0);
+    setInfoVisible(true);
+    Animated.timing(infoOpacity, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [infoOpacity, infoTranslateX]);
 
   useEffect(() => {
     if (currentStep !== forwardResultStep || !anyShort) {
@@ -388,40 +458,6 @@ export default function CalculatorScreen() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-
-  const FormulaModal = () => (
-    <Modal
-      transparent
-      visible={infoModalVisible}
-      animationType="fade"
-      onRequestClose={() => setInfoModalVisible(false)}
-    >
-      <TouchableOpacity
-        style={styles.modalBackdrop}
-        activeOpacity={1}
-        onPress={() => setInfoModalVisible(false)}
-      >
-        <View style={styles.modalSheet}>
-          <Text style={styles.modalTitle}>Como hacemos los vasos</Text>
-
-          {/* Step 1 */}
-          <View style={styles.stepContainer}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.stepText}>
-                Se asume que los vasos se llenan al{" "}
-                <Text style={{ fontWeight: "bold" }}>90% de su capacidad</Text>{" "}
-                y siempre se prepara con{" "}
-                <Text style={{ fontWeight: "bold" }}>3 cubos de hielo</Text> de
-                bolsa, que son{" "}
-                <Text style={{ fontWeight: "bold" }}>120 ml</Text>{" "}
-                aproximadamente.
-              </Text>
-            </View>
-          </View>
-        </View>
-      </TouchableOpacity>
-    </Modal>
-  );
 
   /* ── Auto-advance handlers ── */
 
@@ -639,19 +675,30 @@ export default function CalculatorScreen() {
   const rev = state.reverse;
   const piscoLocked = rev.piscoEntries.length > 1;
   const bebidaBottleLocked = rev.bebidaEntries.length > 1;
-  const fromPromos = rev.reverseInputMode === "promos" && rev.promoExtraMode === "add_more";
+  const fromPromos =
+    rev.reverseInputMode === "promos" && rev.promoExtraMode === "add_more";
 
   const handlePercentagePress = (type: "pisco" | "bebida", id: string) => {
     const entries = type === "pisco" ? rev.piscoEntries : rev.bebidaEntries;
     const entry = entries.find((e) => e.id === id);
-    setPercentageModalTarget({ type, id, current: entry?.percentageFull ?? 100 });
+    setPercentageModalTarget({
+      type,
+      id,
+      current: entry?.percentageFull ?? 100,
+    });
     setPercentageModalVisible(true);
   };
 
   const handlePercentageSelect = (percentage: number) => {
     if (percentageModalTarget) {
-      setBottlePercentage(percentageModalTarget.type, percentageModalTarget.id, percentage);
-      setPercentageModalTarget((prev) => prev ? { ...prev, current: percentage } : null);
+      setBottlePercentage(
+        percentageModalTarget.type,
+        percentageModalTarget.id,
+        percentage,
+      );
+      setPercentageModalTarget((prev) =>
+        prev ? { ...prev, current: percentage } : null,
+      );
     }
     setPercentageModalVisible(false);
   };
@@ -715,10 +762,18 @@ export default function CalculatorScreen() {
         onAdd={fromPromos ? () => addPiscoEntry(1000) : () => addPiscoEntry()}
         onRemove={removePiscoEntry}
         maxEntries={fromPromos ? 5 : 2}
-        addLabel={fromPromos ? "+ Agregar otra botella" : "+ Añadir botellas de otro tamaño"}
+        addLabel={
+          fromPromos
+            ? "+ Agregar otra botella"
+            : "+ Añadir botellas de otro tamaño"
+        }
         locked={piscoLocked}
         allowEmpty={fromPromos}
-        emptyMessage={fromPromos ? "Sin pisco extra — puedes continuar o agregar botellas" : undefined}
+        emptyMessage={
+          fromPromos
+            ? "Sin pisco extra — puedes continuar o agregar botellas"
+            : undefined
+        }
         emptyAddLabel={fromPromos ? "+ Agregar pisco suelto" : undefined}
         showPercentage={fromPromos}
         onPercentagePress={(id) => handlePercentagePress("pisco", id)}
@@ -737,9 +792,7 @@ export default function CalculatorScreen() {
   };
 
   const stepBebida: Step = {
-    question: fromPromos
-      ? "¿Y bebida suelta adicional?"
-      : "¿Y la bebida?",
+    question: fromPromos ? "¿Y bebida suelta adicional?" : "¿Y la bebida?",
     content: (
       <View style={styles.slideContent}>
         <View style={styles.modeToggleRow}>
@@ -770,8 +823,7 @@ export default function CalculatorScreen() {
             <Text
               style={[
                 styles.modeToggleText,
-                rev.bebidaInputMode === "direct" &&
-                  styles.modeToggleTextActive,
+                rev.bebidaInputMode === "direct" && styles.modeToggleTextActive,
               ]}
             >
               Directo en litros
@@ -789,10 +841,18 @@ export default function CalculatorScreen() {
               onAdd={fromPromos ? () => addBebidaEntry(1500) : handleBebidaAdd}
               onRemove={removeBebidaEntry}
               maxEntries={fromPromos ? 5 : 4}
-              addLabel={fromPromos ? "+ Agregar otra botella" : "+ Añadir botellas de otro tamaño"}
+              addLabel={
+                fromPromos
+                  ? "+ Agregar otra botella"
+                  : "+ Añadir botellas de otro tamaño"
+              }
               locked={bebidaBottleLocked}
               allowEmpty={fromPromos}
-              emptyMessage={fromPromos ? "Sin bebida extra — puedes continuar o agregar botellas" : undefined}
+              emptyMessage={
+                fromPromos
+                  ? "Sin bebida extra — puedes continuar o agregar botellas"
+                  : undefined
+              }
               emptyAddLabel={fromPromos ? "+ Agregar bebida suelta" : undefined}
               showPercentage={fromPromos}
               onPercentagePress={(id) => handlePercentagePress("bebida", id)}
@@ -1017,7 +1077,6 @@ export default function CalculatorScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <FormulaModal />
       <BottlePercentageModal
         visible={percentageModalVisible}
         currentPercentage={percentageModalTarget?.current ?? 100}
@@ -1030,7 +1089,7 @@ export default function CalculatorScreen() {
         currentStep={currentStep}
         direction={direction}
         onBack={goBack}
-        onInfo={() => setInfoModalVisible(true)}
+        onInfo={showInfo}
       />
       <Animated.View
         pointerEvents={notifVisible ? "box-only" : "none"}
@@ -1052,6 +1111,35 @@ export default function CalculatorScreen() {
           color="#F5A623"
         />
         <Text style={styles.notificationText}>{displayMsg}</Text>
+      </Animated.View>
+      <Animated.View
+        pointerEvents={infoVisible ? "box-only" : "none"}
+        style={[
+          styles.infoNotification,
+          {
+            opacity: infoOpacity,
+            transform: [
+              { translateY: infoTranslateY },
+              { translateX: infoTranslateX },
+            ],
+          },
+        ]}
+        {...infoPanResponder.panHandlers}
+      >
+        <View style={styles.infoNotificationHeader}>
+          <MaterialCommunityIcons
+            name="information-outline"
+            size={16}
+            color="#2d7d2d"
+          />
+          <Text style={styles.infoNotificationTitle}>Asumimos que:</Text>
+        </View>
+        <Text style={styles.infoNotificationText}>
+          Los vasos se llenan hasta el{" "}
+          <Text style={{ fontWeight: "bold" }}>90% solamente</Text> y que se
+          usan <Text style={{ fontWeight: "bold" }}>3 hielos</Text> (
+          <Text style={{ fontWeight: "bold" }}>120 ml</Text> aprox).
+        </Text>
       </Animated.View>
     </View>
   );
@@ -1158,60 +1246,39 @@ const styles = StyleSheet.create({
     color: "#b36b00",
     fontWeight: "500",
   },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 24,
-  },
-  modalSheet: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    width: "100%",
-    maxWidth: 360,
-    padding: 24,
-    gap: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 20,
-    elevation: 12,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#222",
-    textAlign: "center",
-  },
-  modalBody: {
-    fontSize: 16,
-    color: "#555",
-    lineHeight: 24,
-    textAlign: "left",
-  },
-  stepContainer: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-  },
-  stepText: {
-    fontSize: 15,
-    color: "#555",
-    lineHeight: 22,
-  },
-  formulaBox: {
-    backgroundColor: "#f0f0f0",
+  infoNotification: {
+    position: "absolute",
+    top: 55,
+    left: 16,
+    right: 16,
+    zIndex: 999,
+    backgroundColor: "#f0f9f0",
+    borderWidth: 1,
+    borderColor: "#86c986",
     borderRadius: 12,
+    paddingHorizontal: 14,
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginTop: 8,
+    gap: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  formulaText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#333",
-    textAlign: "center",
+  infoNotificationHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  infoNotificationTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#2d7d2d",
+  },
+  infoNotificationText: {
+    fontSize: 13,
+    color: "#2d7d2d",
+    lineHeight: 19,
   },
   // Reverse-specific styles
   modeToggleRow: {

@@ -1,5 +1,10 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import React, { forwardRef, useImperativeHandle, useRef } from "react";
+import React, {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+} from "react";
 import {
   ImageBackground,
   ScrollView,
@@ -9,7 +14,16 @@ import {
   ViewStyle,
   useWindowDimensions,
 } from "react-native";
-import Animated, { SlideInLeft, SlideInRight } from "react-native-reanimated";
+import Animated, {
+  SlideInLeft,
+  SlideInRight,
+  Easing,
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import SlideProgress from "./SlideProgress";
@@ -50,6 +64,38 @@ const StepContainer = forwardRef<StepContainerRef, Props>(
     const step = steps[currentStep];
     const scrollRef = useRef<ScrollView>(null);
 
+    const isLastStep = currentStep === steps.length - 1;
+    const pulseScale = useSharedValue(1);
+    const glowOpacity = useSharedValue(0);
+
+    useEffect(() => {
+      const easing = Easing.inOut(Easing.sin);
+      if (isLastStep) {
+        pulseScale.value = withRepeat(
+          withTiming(1.18, { duration: 900, easing }),
+          -1,
+          true,
+        );
+        glowOpacity.value = withRepeat(
+          withTiming(0.5, { duration: 900, easing }),
+          -1,
+          true,
+        );
+      } else {
+        cancelAnimation(pulseScale);
+        cancelAnimation(glowOpacity);
+        pulseScale.value = withTiming(1, { duration: 200 });
+        glowOpacity.value = withTiming(0, { duration: 200 });
+      }
+    }, [isLastStep]);
+
+    const infoBtnAnimStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: pulseScale.value }],
+    }));
+    const glowAnimStyle = useAnimatedStyle(() => ({
+      opacity: glowOpacity.value,
+    }));
+
     useImperativeHandle(ref, () => ({
       scrollContentToEnd: () => {
         scrollRef.current?.scrollToEnd({ animated: true });
@@ -78,13 +124,18 @@ const StepContainer = forwardRef<StepContainerRef, Props>(
 
         {/* Info button — absolute, top-right of the whole screen */}
         {onInfo && (
-          <TouchableOpacity
-            style={[styles.infoBtn, { top: insets.top + 8 }]}
-            onPress={onInfo}
-            activeOpacity={0.7}
+          <Animated.View
+            style={[styles.infoBtn, { top: insets.top + 8 }, infoBtnAnimStyle]}
           >
-            <MaterialIcons name="info-outline" size={24} color="#fff" />
-          </TouchableOpacity>
+            <Animated.View style={[styles.infoGlow, glowAnimStyle]} />
+            <TouchableOpacity
+              onPress={onInfo}
+              activeOpacity={0.7}
+              style={styles.infoBtnInner}
+            >
+              <MaterialIcons name="info-outline" size={24} color="#fff" />
+            </TouchableOpacity>
+          </Animated.View>
         )}
 
         <View
@@ -120,20 +171,22 @@ const StepContainer = forwardRef<StepContainerRef, Props>(
                 : step.expandCard
                   ? { flex: 1 }
                   : step.scrollable === false
-                    ? { maxHeight: height * 0.50 }
-                    : { height: height * 0.50 },
+                    ? { maxHeight: height * 0.5 }
+                    : { height: height * 0.5 },
             ]}
           >
             <Animated.View
               key={currentStep}
               entering={entering}
               style={
-                !step.fitContent && (step.scrollable !== false || step.expandCard)
+                !step.fitContent &&
+                (step.scrollable !== false || step.expandCard)
                   ? { flex: 1 }
                   : undefined
               }
             >
-              {step.fitContent || (step.scrollable === false && !step.expandCard) ? (
+              {step.fitContent ||
+              (step.scrollable === false && !step.expandCard) ? (
                 <View style={[styles.cardContent, step.contentStyle]}>
                   {step.content}
                 </View>
@@ -141,7 +194,10 @@ const StepContainer = forwardRef<StepContainerRef, Props>(
                 <ScrollView
                   ref={scrollRef}
                   style={{ flex: 1 }}
-                  contentContainerStyle={[styles.cardContent, step.contentStyle]}
+                  contentContainerStyle={[
+                    styles.cardContent,
+                    step.contentStyle,
+                  ]}
                   showsVerticalScrollIndicator={false}
                   keyboardShouldPersistTaps="handled"
                   nestedScrollEnabled
@@ -213,7 +269,18 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 16,
     zIndex: 10,
+  },
+  infoBtnInner: {
     padding: 8,
+  },
+  infoGlow: {
+    position: "absolute",
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#F5A623",
+    top: 1,
+    left: 1,
   },
   contentWrapper: {
     overflow: "hidden",
