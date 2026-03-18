@@ -136,7 +136,12 @@ export default function CalculatorScreen() {
     ice: boolean,
     _n: number,
   ): string {
-    const items = ([pisco && "pisco", bebida && "bebida", ice && "hielo"] as (string | false)[]).filter(Boolean) as string[];
+    const items = (
+      [pisco && "pisco", bebida && "bebida", ice && "hielo"] as (
+        | string
+        | false
+      )[]
+    ).filter(Boolean) as string[];
     if (items.length === 0) return "";
     const list =
       items.length === 1
@@ -361,7 +366,7 @@ export default function CalculatorScreen() {
     ].join("\n");
 
     await Clipboard.setStringAsync(message);
-    setCopied(false);
+    setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -384,11 +389,16 @@ export default function CalculatorScreen() {
           <View style={styles.stepContainer}>
             <View style={{ flex: 1 }}>
               <Text style={styles.stepText}>
-                Se asume que los vasos se llenan al <Text style={{ fontWeight: "bold" }}>90% de su capacidad</Text> y siempre se prepara con <Text style={{ fontWeight: "bold" }}>3 cubos de hielo</Text> de bolsa, que son <Text style={{ fontWeight: "bold" }}>120 ml</Text> aproximadamente.
+                Se asume que los vasos se llenan al{" "}
+                <Text style={{ fontWeight: "bold" }}>90% de su capacidad</Text>{" "}
+                y siempre se prepara con{" "}
+                <Text style={{ fontWeight: "bold" }}>3 cubos de hielo</Text> de
+                bolsa, que son{" "}
+                <Text style={{ fontWeight: "bold" }}>120 ml</Text>{" "}
+                aproximadamente.
               </Text>
             </View>
           </View>
-
         </View>
       </TouchableOpacity>
     </Modal>
@@ -885,14 +895,14 @@ export default function CalculatorScreen() {
   return (
     <View style={{ flex: 1 }}>
       <FormulaModal />
-        <StepContainer
-          ref={containerRef}
-          steps={steps}
-          currentStep={currentStep}
-          direction={direction}
-          onBack={goBack}
-          onInfo={() => setInfoModalVisible(true)}
-        />
+      <StepContainer
+        ref={containerRef}
+        steps={steps}
+        currentStep={currentStep}
+        direction={direction}
+        onBack={goBack}
+        onInfo={() => setInfoModalVisible(true)}
+      />
       <Animated.View
         pointerEvents={notifVisible ? "box-only" : "none"}
         style={[
