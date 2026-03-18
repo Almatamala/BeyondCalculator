@@ -712,7 +712,7 @@ export default function CalculatorScreen() {
         availableSizes={PISCO_BOTTLE_SIZES}
         onEntryCountChange={setPiscoEntryCount}
         onEntrySizeChange={setPiscoEntrySize}
-        onAdd={fromPromos ? () => addPiscoEntry(1000) : addPiscoEntry}
+        onAdd={fromPromos ? () => addPiscoEntry(1000) : () => addPiscoEntry()}
         onRemove={removePiscoEntry}
         maxEntries={fromPromos ? 5 : 2}
         addLabel={fromPromos ? "+ Agregar otra botella" : "+ Añadir botellas de otro tamaño"}
