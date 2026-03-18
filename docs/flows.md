@@ -35,21 +35,45 @@ El resultado se divide por tamaño de botella elegido. Si la fracción sobrante 
 
 **Objetivo:** dado lo que tienen, decir cuántos vasos salen.
 
-### Steps
+### Steps (dinámicos)
 
-1. **Pisco** — Cards de botellas con CountPicker. Tamaños: 750ml, 1L. Máximo 2 cards.
-2. **Bebida** — Dos modos: "Por botellas" (cards, max 4 tamaños) o "Directo en litros" (input + toggle mL/L).
-3. **Hielo** — "Por bolsas" (CountPicker de bolsas de 1kg) o "Que alcance nomás" (omite hielo del cálculo).
-4. **Nivel + Personas** — LevelPicker + CountPicker.
-5. **Vaso** — Mismo GlassSelector. Auto-avanza.
-6. **Resultado** — Total de vasos, ratio, división por persona, mensaje de sobras.
+1. **Modo de ingreso** — "Ingresar Promos" vs "Ingresar Pisco y bebida por separado". Auto-avanza.
+
+**Si elige Promos:**
+
+2. **Promos** — Cards de promo. Cada card tiene: tamaño pisco (750ml/1L), tamaño bebida (1L/1.5L/2L/3L), cantidad. Sin lockout de tamaños. Defaults: pisco 1L, bebida 1.5L. Primera card no se puede borrar.
+3. **¿Algo más?** — "Eso es todo" vs "Añadir más botellas sueltas". Auto-avanza.
+   - Si "Eso es todo": salta directo a Hielo.
+   - Si "Añadir más": resetea entries a `[]`, continua a Pisco y Bebida sueltos (los mL de promos se suman a los de botellas).
+4. _(condicional)_ **Pisco suelto** — Empty state si no hay entries (permite avanzar con 0 botellas). Cada card = 1 botella individual (sin CountPicker, sin lockeo de tamaños, duplicados OK). Selector de porcentaje (100%/75%/50%/25%/personalizado) para botellas parciales.
+5. _(condicional)_ **Bebida suelta** — Igual que Pisco suelto: empty state, botella individual con porcentaje.
+
+**Si elige Por separado:**
+
+2. **Pisco** — Cards de botellas con CountPicker. Tamaños: 750ml, 1L. Máximo 2 cards.
+3. **Bebida** — Dos modos: "Por botellas" (cards, max 4 tamaños) o "Directo en litros" (input + toggle mL/L).
+
+**Pasos finales (ambos caminos):**
+
+- **Hielo** — "Por bolsas" (CountPicker de bolsas de 1kg) o "Que alcance nomás" (omite hielo del cálculo).
+- **Nivel + Personas** — LevelPicker + CountPicker.
+- **Vaso** — Mismo GlassSelector. Auto-avanza.
+- **Resultado** — Total de vasos, ratio, división por persona, mensaje de sobras.
 
 ### Calculo
 
 ```ts
 // utils/calculations.ts — calculateReverseResults()
-totalPiscoMl  = sum(entries.sizeMl * entries.count)
-totalBebidaMl = sum(entries) o directMl
+// Promos aportan mL de pisco y bebida
+promoPiscoMl  = sum(promos.piscoSizeMl * promos.count)
+promoBebidaMl = sum(promos.bebidaSizeMl * promos.count)
+
+// Botellas sueltas (solo si mode es "separate" o promoExtra es "add_more")
+bottlePiscoMl  = sum(piscoEntries.sizeMl * entries.count * (percentageFull ?? 100) / 100)
+bottleBebidaMl = sum(bebidaEntries * percentage) o directMl
+
+totalPiscoMl  = promoPiscoMl + bottlePiscoMl
+totalBebidaMl = promoBebidaMl + bottleBebidaMl
 totalIceMl    = iceKg * 1090          // solo si modo "manual"
 
 drinksFromPisco  = totalPiscoMl  / (volPerDrink * ratio.liquor)
@@ -61,10 +85,15 @@ totalDrinks = floor(min(drinksFromPisco, drinksFromBebida, [drinksFromIce]))
 
 El ingrediente limitante (el que se acaba primero) determina el total. Si hielo es "auto", se excluye del min.
 
-### Lockeo de tamaños en BottleInput
+### BottleInput: dos modos de uso
 
-- **Pisco (2 tamaños):** Con 1 card los pills son interactivos. Al agregar la 2a card, ambas se lockean (pill fijo, sin cambio).
-- **Bebida (4 tamaños):** Con 1 card los pills son interactivos. Al agregar más cards, cada una muestra su tamaño fijo. Nuevos tamaños se eligen desde un modal que excluye los ya usados.
+**Modo grupo (por separado):** Cada card = un tamaño con CountPicker de cantidad. Los tamaños se lockean al haber >1 card para evitar duplicados.
+- Pisco: máx 2 cards (750ml, 1L).
+- Bebida: máx 4 cards. Modal filtra tamaños ya usados.
+
+**Modo botella individual (sueltas desde promos):** Cada card = 1 botella física con tamaño + porcentaje de llenado. Sin CountPicker, sin lockeo, duplicados permitidos. Máx 5 cards.
+
+- **Promos:** Sin lockout. Todos los tamaños siempre editables independientemente de cuántas cards haya.
 
 ---
 

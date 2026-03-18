@@ -23,6 +23,9 @@ app/calculator/index.tsx     # Pantalla principal — wizard de N pasos
 components/calculator/      # Componentes de cada step
   UseCaseSelector           # Step 0: forward vs reverse
   ModeSelector              # Forward: todos lo mismo vs personalizado
+  ReverseInputModeSelector   # Reverse: promos vs por separado
+  PromoInput                # Reverse: cards de promo (pisco+bebida juntos)
+  PromoExtraSelector        # Reverse: eso es todo vs añadir más sueltas
   BottleInput               # Reverse: card de botellas con CountPicker
   BebidaSizeModal           # Reverse: modal para elegir tamano de bebida
   ReverseResultCard         # Reverse: pantalla de resultado
@@ -43,7 +46,7 @@ constants/drinks.ts          # Ratios, tamanos de botella, config de vasos
 Un Step 0 global permite elegir entre ambos flujos. El wizard se arma dinámicamente.
 
 - **Forward** (4 steps): Modo → Datos → Vaso → Resultado (botellas + clipboard)
-- **Reverse** (6 steps): Pisco → Bebida → Hielo → Nivel+Personas → Vaso → Resultado (vasos)
+- **Reverse** (steps dinámicos): Modo → [Promos → ¿Más?] o [Pisco → Bebida] → Hielo → Nivel+Personas → Vaso → Resultado
 
 Ver [docs/flows.md](docs/flows.md) para detalle de cada step y [docs/design-decisions.md](docs/design-decisions.md) para las decisiones de diseno.
 

@@ -46,6 +46,16 @@
 
 ---
 
+## Promos + botellas sueltas: empty state y porcentaje
+
+**Decision:** Cuando el usuario elige "Añadir más botellas sueltas" desde promos, los entries se resetean a `[]` (empty state). Cada botella suelta muestra un selector de porcentaje (100%/75%/50%/25%/personalizado). El porcentaje solo aparece en el path de promos, no en "Por separado".
+
+**Por que:** Si alguien compró promos y además tiene un pisco a medio usar, necesita poder declarar esa botella parcial. Pero en el flow "Por separado" se asume que el usuario está planeando comprar botellas completas, por lo que el porcentaje no aplica. El empty state permite que alguien que solo tiene promos (sin botellas extra de pisco o bebida) no se quede atrapado en un step obligatorio.
+
+**Constraint:** `percentageFull` es opcional en `BottleEntry` (default semántico: 100). El cálculo multiplica `sizeMl * count * (percentageFull ?? 100) / 100`. En este modo cada card es una botella individual (`singleBottleMode`): sin CountPicker, sin lockeo de tamaños, duplicados permitidos — porque el concepto cambia de "grupo de X botellas de un tamaño" a "esta botella específica con su nivel de llenado".
+
+---
+
 ## Sin clipboard en reverse
 
 **Decision:** El resultado reverse solo tiene "Empezar de nuevo", sin botón de copiar.

@@ -4,6 +4,17 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import CountPicker from "@/components/countPicker";
 import { BottleEntry } from "@/types/calculator";
 
+/**
+ * BottleInput operates in two modes:
+ *
+ * **Default (group mode):** Each card = a size group with a CountPicker.
+ * Sizes lock when >1 card to prevent duplicates. Used in "separate" flow.
+ *
+ * **singleBottleMode:** Each card = one physical bottle (size + percentage full).
+ * No CountPicker, no size locking, duplicate sizes allowed.
+ * Used when adding loose bottles on top of promos (fromPromos/add_more),
+ * where users declare individual bottles they already have, possibly partial.
+ */
 interface Props {
   entries: BottleEntry[];
   availableSizes: number[];
@@ -14,6 +25,13 @@ interface Props {
   maxEntries: number;
   addLabel: string;
   locked: boolean;
+  allowEmpty?: boolean;
+  emptyMessage?: string;
+  emptyAddLabel?: string;
+  showPercentage?: boolean;
+  onPercentagePress?: (id: string) => void;
+  /** Each card = 1 bottle (no CountPicker, no size locking, duplicates OK) */
+  singleBottleMode?: boolean;
 }
 
 function formatSize(ml: number): string {
@@ -30,55 +48,87 @@ export default function BottleInput({
   maxEntries,
   addLabel,
   locked,
+  allowEmpty,
+  emptyMessage,
+  emptyAddLabel,
+  showPercentage,
+  onPercentagePress,
+  singleBottleMode,
 }: Props) {
+  const effectiveLocked = singleBottleMode ? false : locked;
   return (
     <View style={styles.container}>
-      {entries.map((entry) => (
-        <View key={entry.id} style={styles.card}>
-          <View style={styles.cardHeader}>
-            {locked ? (
-              <View style={[styles.pill, styles.pillActive]}>
-                <Text style={styles.pillTextActive}>{formatSize(entry.sizeMl)}</Text>
-              </View>
-            ) : (
-              <View style={styles.pillRow}>
-                {availableSizes.map((size) => (
-                  <TouchableOpacity
-                    key={size}
-                    style={[styles.pill, entry.sizeMl === size && styles.pillActive]}
-                    onPress={() => onEntrySizeChange(entry.id, size)}
-                    activeOpacity={0.7}
-                  >
-                    <Text
-                      style={[
-                        styles.pillText,
-                        entry.sizeMl === size && styles.pillTextActive,
-                      ]}
-                    >
-                      {formatSize(size)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-            {entries.length > 1 && (
-              <TouchableOpacity
-                style={styles.removeBtn}
-                onPress={() => onRemove(entry.id)}
-              >
-                <Text style={styles.removeBtnText}>×</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          <CountPicker
-            value={entry.count}
-            onChange={(count) => onEntryCountChange(entry.id, count)}
-          />
+      {entries.length === 0 && emptyMessage ? (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyText}>{emptyMessage}</Text>
         </View>
-      ))}
+      ) : (
+        entries.map((entry) => {
+          const pct = entry.percentageFull ?? 100;
+          return (
+            <View key={entry.id} style={styles.card}>
+              <View style={styles.cardHeader}>
+                {effectiveLocked ? (
+                  <View style={[styles.pill, styles.pillActive]}>
+                    <Text style={styles.pillTextActive}>{formatSize(entry.sizeMl)}</Text>
+                  </View>
+                ) : (
+                  <View style={styles.pillRow}>
+                    {availableSizes.map((size) => (
+                      <TouchableOpacity
+                        key={size}
+                        style={[styles.pill, entry.sizeMl === size && styles.pillActive]}
+                        onPress={() => onEntrySizeChange(entry.id, size)}
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={[
+                            styles.pillText,
+                            entry.sizeMl === size && styles.pillTextActive,
+                          ]}
+                        >
+                          {formatSize(size)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+                {(entries.length > 1 || allowEmpty) && (
+                  <TouchableOpacity
+                    style={styles.removeBtn}
+                    onPress={() => onRemove(entry.id)}
+                  >
+                    <Text style={styles.removeBtnText}>×</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              {!singleBottleMode && (
+                <CountPicker
+                  value={entry.count}
+                  onChange={(count) => onEntryCountChange(entry.id, count)}
+                />
+              )}
+              {showPercentage && (
+                <TouchableOpacity
+                  style={styles.percentageBtn}
+                  onPress={() => onPercentagePress?.(entry.id)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.percentageBtnText}>
+                    {pct === 100 ? "Botella llena" : `${pct}% llena`}
+                  </Text>
+                  <Text style={styles.percentageChevron}>▾</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          );
+        })
+      )}
       {entries.length < maxEntries && (
         <TouchableOpacity style={styles.addBtn} onPress={onAdd} activeOpacity={0.7}>
-          <Text style={styles.addBtnText}>{addLabel}</Text>
+          <Text style={styles.addBtnText}>
+            {entries.length === 0 && emptyAddLabel ? emptyAddLabel : addLabel}
+          </Text>
         </TouchableOpacity>
       )}
     </View>
@@ -152,5 +202,38 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#F5A623",
     fontWeight: "600",
+  },
+  emptyCard: {
+    backgroundColor: "#f0f0f0",
+    borderRadius: 14,
+    padding: 20,
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 14,
+    color: "#999",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  percentageBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    alignSelf: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    backgroundColor: "#fff",
+  },
+  percentageBtnText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#666",
+  },
+  percentageChevron: {
+    fontSize: 12,
+    color: "#888",
   },
 });

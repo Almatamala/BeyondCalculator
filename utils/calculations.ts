@@ -74,11 +74,25 @@ export function calculateReverseResults(reverse: ReverseState): ReverseCalculati
   const vol = usableVolume(glassMl);
   const ratio = LEVEL_RATIOS[reverse.level];
 
-  const totalPiscoMl = reverse.piscoEntries.reduce((sum, e) => sum + e.sizeMl * e.count, 0);
+  // Sum promo contributions
+  const promoPiscoMl = reverse.promoEntries.reduce((sum, e) => sum + e.piscoSizeMl * e.count, 0);
+  const promoBebidaMl = reverse.promoEntries.reduce((sum, e) => sum + e.bebidaSizeMl * e.count, 0);
 
-  const totalBebidaMl = reverse.bebidaInputMode === "bottles"
-    ? reverse.bebidaEntries.reduce((sum, e) => sum + e.sizeMl * e.count, 0)
-    : reverse.bebidaDirectMl;
+  // When using promos with "done", only promo mL count (no bottle entries)
+  // When using promos with "add_more", promo mL + bottle entries
+  // When using "separate", no promo mL, only bottle entries
+  const usePromos = reverse.reverseInputMode === "promos";
+  const useBottles = !usePromos || reverse.promoExtraMode === "add_more";
+
+  const bottlePiscoMl = useBottles ? reverse.piscoEntries.reduce((sum, e) => sum + e.sizeMl * e.count * ((e.percentageFull ?? 100) / 100), 0) : 0;
+  const bottleBebidaMl = useBottles
+    ? (reverse.bebidaInputMode === "bottles"
+        ? reverse.bebidaEntries.reduce((sum, e) => sum + e.sizeMl * e.count * ((e.percentageFull ?? 100) / 100), 0)
+        : reverse.bebidaDirectMl)
+    : 0;
+
+  const totalPiscoMl = (usePromos ? promoPiscoMl : 0) + bottlePiscoMl;
+  const totalBebidaMl = (usePromos ? promoBebidaMl : 0) + bottleBebidaMl;
 
   const piscoPerDrink = vol * ratio.liquor;
   const bebidaPerDrink = vol * ratio.soda;
