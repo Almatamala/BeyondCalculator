@@ -380,17 +380,11 @@ export default function CalculatorScreen() {
         <View style={styles.modalSheet}>
           <Text style={styles.modalTitle}>¿Cómo se calcula?</Text>
 
-          <View >
-            <Text >
-              Los vasos se sirven al 90% de su capacidad para evitar derrames y El hielo se calcula como 3 cubos estándar por vaso (120 ml total).
-            </Text>
-          </View>
-
           {/* Step 1 */}
           <View style={styles.stepContainer}>
             <View style={{ flex: 1 }}>
               <Text style={styles.stepText}>
-                Se calcula el <Text style={{ fontWeight: "bold" }}>volumen útil</Text> del vaso, que es el 90% de su capacidad, menos el hielo.
+                Se calcula el <Text style={{ fontWeight: "bold" }}>volumen útil</Text> del vaso, que es el 90% de su capacidad, menos el hielo:
               </Text>
               <View style={styles.formulaBox}>
                 <Text style={styles.formulaText}>
@@ -404,23 +398,12 @@ export default function CalculatorScreen() {
           <View style={styles.stepContainer}>
             <View style={{ flex: 1 }}>
               <Text style={styles.stepText}>
-                Este volumen se divide entre pisco y bebida según la <Text style={{ fontWeight: "bold" }}>intensidad</Text>.
+                Este volumen se divide entre pisco y bebida según la <Text style={{ fontWeight: "bold" }}>proporción</Text>, 
+                y se multiplica por la <Text style={{ fontWeight: "bold" }}>cantidad de tragos</Text> para obtener el total:
               </Text>
               <View style={styles.formulaBox}>
-                <Text style={styles.formulaText}>Pisco por trago = Volumen útil × Proporción</Text>
-                <Text style={styles.formulaText}>Bebida por trago = Volumen útil × Proporción</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Step 3 */}
-          <View style={styles.stepContainer}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.stepText}>
-                Finalmente, se multiplica por la <Text style={{ fontWeight: "bold" }}>cantidad de tragos</Text> para obtener el total a comprar.
-              </Text>
-              <View style={styles.formulaBox}>
-                <Text style={styles.formulaText}>Total = Cantidad por trago × N° de tragos</Text>
+                <Text style={styles.formulaText}>Total pisco  = Volumen útil × Proporción pisco × N° tragos</Text>
+                <Text style={styles.formulaText}>Total bebida = Volumen útil × Proporción bebida × N° tragos</Text>
               </View>
             </View>
           </View>
@@ -1093,7 +1076,6 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   stepText: {
-    flex: 1,
     fontSize: 15,
     color: "#555",
     lineHeight: 22,
