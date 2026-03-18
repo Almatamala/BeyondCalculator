@@ -67,8 +67,18 @@ const StepContainer = forwardRef<StepContainerRef, Props>(
     const isLastStep = currentStep === steps.length - 1;
     const pulseScale = useSharedValue(1);
     const glowOpacity = useSharedValue(0);
+    const pulsingSuppressed = useRef(false);
+
+    const stopPulsing = () => {
+      pulsingSuppressed.current = true;
+      cancelAnimation(pulseScale);
+      cancelAnimation(glowOpacity);
+      pulseScale.value = withTiming(1, { duration: 200 });
+      glowOpacity.value = withTiming(0, { duration: 200 });
+    };
 
     useEffect(() => {
+      pulsingSuppressed.current = false;
       const easing = Easing.inOut(Easing.sin);
       if (isLastStep) {
         pulseScale.value = withRepeat(
@@ -129,7 +139,7 @@ const StepContainer = forwardRef<StepContainerRef, Props>(
           >
             <Animated.View style={[styles.infoGlow, glowAnimStyle]} />
             <TouchableOpacity
-              onPress={onInfo}
+              onPress={() => { stopPulsing(); onInfo?.(); }}
               activeOpacity={0.7}
               style={styles.infoBtnInner}
             >
