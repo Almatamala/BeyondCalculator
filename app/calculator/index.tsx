@@ -378,33 +378,14 @@ export default function CalculatorScreen() {
         onPress={() => setInfoModalVisible(false)}
       >
         <View style={styles.modalSheet}>
-          <Text style={styles.modalTitle}>¿Cómo se calcula?</Text>
+          <Text style={styles.modalTitle}>Como hacemos los vasos</Text>
 
           {/* Step 1 */}
           <View style={styles.stepContainer}>
             <View style={{ flex: 1 }}>
               <Text style={styles.stepText}>
-                Se calcula el <Text style={{ fontWeight: "bold" }}>volumen útil</Text> del vaso, que es el 90% de su capacidad, menos el hielo:
+                Se asume que los vasos se llenan al <Text style={{ fontWeight: "bold" }}>90% de su capacidad</Text> y siempre se prepara con <Text style={{ fontWeight: "bold" }}>3 cubos de hielo</Text> de bolsa, que son <Text style={{ fontWeight: "bold" }}>120 ml</Text> aproximadamente.
               </Text>
-              <View style={styles.formulaBox}>
-                <Text style={styles.formulaText}>
-                 Volumen útil = (Volumen del vaso × 0.9) - 120ml
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Step 2 */}
-          <View style={styles.stepContainer}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.stepText}>
-                Este volumen se divide entre pisco y bebida según la <Text style={{ fontWeight: "bold" }}>proporción</Text>, 
-                y se multiplica por la <Text style={{ fontWeight: "bold" }}>cantidad de tragos</Text> para obtener el total:
-              </Text>
-              <View style={styles.formulaBox}>
-                <Text style={styles.formulaText}>Total pisco  = Volumen útil × Proporción pisco × N° tragos</Text>
-                <Text style={styles.formulaText}>Total bebida = Volumen útil × Proporción bebida × N° tragos</Text>
-              </View>
             </View>
           </View>
 
