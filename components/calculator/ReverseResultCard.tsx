@@ -17,12 +17,13 @@ interface Props {
 }
 
 const LEFTOVER_MESSAGES = [
-  "se lo pelea a combos",
+  "se lo pelean a combos",
   "va pa'l que lo pille primero",
   "se los pelean entre todos",
   "se los sortean",
   "los deja el más vio",
   "quedan pa'l after",
+  "se los manda el mas weon al seco"
 ];
 
 function buildSuggestionLabel(s: ReverseSuggestion): string {

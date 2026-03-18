@@ -37,13 +37,14 @@ interface Props {
   currentStep: number;
   direction: "forward" | "backward";
   onBack?: () => void;
+  onInfo?: () => void;
 }
 
 const BG_IMAGE = require("@/assets/images/piscola.jpg");
 const ANIM_DURATION = 300;
 
 const StepContainer = forwardRef<StepContainerRef, Props>(
-  ({ steps, currentStep, direction, onBack }, ref) => {
+  ({ steps, currentStep, direction, onBack, onInfo }, ref) => {
     const { height } = useWindowDimensions();
     const insets = useSafeAreaInsets();
     const step = steps[currentStep];
@@ -72,6 +73,17 @@ const StepContainer = forwardRef<StepContainerRef, Props>(
             activeOpacity={0.7}
           >
             <MaterialIcons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+        )}
+
+        {/* Info button — absolute, top-right of the whole screen */}
+        {onInfo && (
+          <TouchableOpacity
+            style={[styles.infoBtn, { top: insets.top + 8 }]}
+            onPress={onInfo}
+            activeOpacity={0.7}
+          >
+            <MaterialIcons name="info-outline" size={24} color="#fff" />
           </TouchableOpacity>
         )}
 
@@ -194,6 +206,12 @@ const styles = StyleSheet.create({
   backBtn: {
     position: "absolute",
     left: 16,
+    zIndex: 10,
+    padding: 8,
+  },
+  infoBtn: {
+    position: "absolute",
+    right: 16,
     zIndex: 10,
     padding: 8,
   },

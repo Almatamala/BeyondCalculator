@@ -6,6 +6,7 @@ import {
   Alert,
   Animated,
   BackHandler,
+  Modal,
   PanResponder,
   StyleSheet,
   Text,
@@ -78,6 +79,7 @@ export default function CalculatorScreen() {
   const containerRef = useRef<StepContainerRef>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
+  const [infoModalVisible, setInfoModalVisible] = useState(false);
 
   const [piscoBottleMl, setPiscoBottleMl] = useState(1000);
   const [sodaBottleMl, setSodaBottleMl] = useState(3000);
@@ -359,9 +361,74 @@ export default function CalculatorScreen() {
     ].join("\n");
 
     await Clipboard.setStringAsync(message);
-    setCopied(true);
+    setCopied(false);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const FormulaModal = () => (
+    <Modal
+      transparent
+      visible={infoModalVisible}
+      animationType="fade"
+      onRequestClose={() => setInfoModalVisible(false)}
+    >
+      <TouchableOpacity
+        style={styles.modalBackdrop}
+        activeOpacity={1}
+        onPress={() => setInfoModalVisible(false)}
+      >
+        <View style={styles.modalSheet}>
+          <Text style={styles.modalTitle}>¿Cómo se calcula?</Text>
+
+          <View >
+            <Text >
+              Los vasos se sirven al 90% de su capacidad para evitar derrames y El hielo se calcula como 3 cubos estándar por vaso (120 ml total).
+            </Text>
+          </View>
+
+          {/* Step 1 */}
+          <View style={styles.stepContainer}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.stepText}>
+                Se calcula el <Text style={{ fontWeight: "bold" }}>volumen útil</Text> del vaso, que es el 90% de su capacidad, menos el hielo.
+              </Text>
+              <View style={styles.formulaBox}>
+                <Text style={styles.formulaText}>
+                 Volumen útil = (Volumen del vaso × 0.9) - 120ml
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Step 2 */}
+          <View style={styles.stepContainer}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.stepText}>
+                Este volumen se divide entre pisco y bebida según la <Text style={{ fontWeight: "bold" }}>intensidad</Text>.
+              </Text>
+              <View style={styles.formulaBox}>
+                <Text style={styles.formulaText}>Pisco por trago = Volumen útil × Proporción</Text>
+                <Text style={styles.formulaText}>Bebida por trago = Volumen útil × Proporción</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Step 3 */}
+          <View style={styles.stepContainer}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.stepText}>
+                Finalmente, se multiplica por la <Text style={{ fontWeight: "bold" }}>cantidad de tragos</Text> para obtener el total a comprar.
+              </Text>
+              <View style={styles.formulaBox}>
+                <Text style={styles.formulaText}>Total = Cantidad por trago × N° de tragos</Text>
+              </View>
+            </View>
+          </View>
+
+        </View>
+      </TouchableOpacity>
+    </Modal>
+  );
 
   /* ── Auto-advance handlers ── */
 
@@ -853,13 +920,15 @@ export default function CalculatorScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <StepContainer
-        ref={containerRef}
-        steps={steps}
-        currentStep={currentStep}
-        direction={direction}
-        onBack={goBack}
-      />
+      <FormulaModal />
+        <StepContainer
+          ref={containerRef}
+          steps={steps}
+          currentStep={currentStep}
+          direction={direction}
+          onBack={goBack}
+          onInfo={() => setInfoModalVisible(true)}
+        />
       <Animated.View
         pointerEvents={notifVisible ? "box-only" : "none"}
         style={[
@@ -985,6 +1054,62 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#b36b00",
     fontWeight: "500",
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  modalSheet: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    width: "100%",
+    maxWidth: 360,
+    padding: 24,
+    gap: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#222",
+    textAlign: "center",
+  },
+  modalBody: {
+    fontSize: 16,
+    color: "#555",
+    lineHeight: 24,
+    textAlign: "left",
+  },
+  stepContainer: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  stepText: {
+    flex: 1,
+    fontSize: 15,
+    color: "#555",
+    lineHeight: 22,
+  },
+  formulaBox: {
+    backgroundColor: "#f0f0f0",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginTop: 8,
+  },
+  formulaText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#333",
+    textAlign: "center",
   },
   // Reverse-specific styles
   modeToggleRow: {
