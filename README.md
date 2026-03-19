@@ -91,3 +91,29 @@ eas build --platform ios
 ```bash
 npm run lint
 ```
+
+### Tests
+
+```bash
+npm test
+```
+
+Los tests cubren exclusivamente la lógica de cálculo (`utils/calculations.ts`) y corren en Node con Jest + ts-jest, sin ninguna dependencia de React Native.
+
+#### Qué se testea
+
+**`usableVolume`** — volumen líquido disponible después de aplicar el fill ratio (90%) y descontar el hielo por vaso (120ml).
+
+**`calculateResults` — flujo forward**
+
+- Modo *same*: verifica los tres niveles de pisco (algo piola, normal, 'algo piola', desquiciado, personalizado) con distintas combinaciones de personas/vasos y que los resultados escalen linealmente.
+- Modo *personalized*: suma correctamente las contribuciones de cada persona con su propio nivel y vasos.
+
+**`calculateReverseResults` — flujo reverse**
+
+- Modo *separate*: el factor limitante (pisco, bebida o hielo) se detecta correctamente; se valida el uso de múltiples entradas de botella, botellas parciales (`percentageFull`), entrada directa de ml de bebida, modo de hielo manual vs auto, y el split de vasos por persona con leftover.
+- Modo *promos*: `done` (solo ml de promos) y `add_more` (promos + botellas sueltas), incluyendo múltiples entradas de promo.
+- **Lógica de sugerencias**: qué botella de bebida o cuántas bolsas de hielo comprar para aprovechar el pisco disponible.
+  - Bebida: se sugiere la botella más pequeña que cubra el shortfall, salvo que el sobrante sea menor al 25% de la botella piso (en ese caso se queda con la piso).
+  - Hielo: se redondea hacia arriba salvo que el resto sea menor al 25% de una bolsa.
+  - Empate pisco/bebida: se reporta `"bebida"` como factor limitante y no se emite sugerencia.

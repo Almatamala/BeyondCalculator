@@ -125,13 +125,26 @@ export function calculateReverseResults(reverse: ReverseState): ReverseCalculati
     if (bebidaPerDrink > 0) {
       const shortfall = maxFromPisco * bebidaPerDrink - totalBebidaMl;
       if (shortfall > 0) {
-        const fitting = SODA_BOTTLE_SIZES.filter((s) => s <= shortfall);
-        if (fitting.length > 0) bebidaAddMl = Math.max(...fitting);
+        const floorBottle = Math.max(0, ...SODA_BOTTLE_SIZES.filter((s) => s <= shortfall));
+        const ceilCandidates = SODA_BOTTLE_SIZES.filter((s) => s >= shortfall);
+        const ceilBottle = ceilCandidates.length > 0 ? Math.min(...ceilCandidates) : Math.max(...SODA_BOTTLE_SIZES);
+        if (floorBottle === 0) {
+          // shortfall is smaller than the smallest bottle — only suggest if shortfall ≥ 25% of that bottle
+          if (shortfall >= 0.25 * ceilBottle) bebidaAddMl = ceilBottle;
+        } else {
+          const uncovered = shortfall - floorBottle;
+          bebidaAddMl = uncovered >= 0.25 * floorBottle ? ceilBottle : floorBottle;
+        }
       }
     }
     if (reverse.iceInputMode === "manual") {
       const shortfall = maxFromPisco * ICE_ML_PER_DRINK - reverse.iceKg * ICE_BAG_ML;
-      if (shortfall > 0) iceAddBags = Math.floor(shortfall / ICE_BAG_ML);
+      if (shortfall > 0) {
+        const remainder = shortfall % ICE_BAG_ML;
+        iceAddBags = remainder >= 0.25 * ICE_BAG_ML
+          ? Math.ceil(shortfall / ICE_BAG_ML)
+          : Math.floor(shortfall / ICE_BAG_ML);
+      }
     }
   }
 
