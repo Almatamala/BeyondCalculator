@@ -31,7 +31,7 @@ export default function PromoInput({
       {entries.map((entry) => (
         <View key={entry.id} style={styles.card}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Promo</Text>
+            <Text style={styles.cardTitle}>Promo </Text>
             {entries.length > 1 && (
               <TouchableOpacity
                 style={styles.removeBtn}
@@ -107,7 +107,11 @@ export default function PromoInput({
         </View>
       ))}
 
-      <TouchableOpacity style={styles.addBtn} onPress={onAdd} activeOpacity={0.7}>
+      <TouchableOpacity
+        style={styles.addBtn}
+        onPress={onAdd}
+        activeOpacity={0.7}
+      >
         <Text style={styles.addBtnText}>+ Añadir otra promo</Text>
       </TouchableOpacity>
     </View>

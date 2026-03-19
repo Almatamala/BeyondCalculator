@@ -49,7 +49,7 @@ import {
 import {
   calculateResults,
   calculateReverseResults,
-  usableVolume,
+  drinkVolumes,
 } from "@/utils/calculations";
 
 export default function CalculatorScreen() {
@@ -121,8 +121,7 @@ export default function CalculatorScreen() {
       : state.peopleCount * state.drinksPerPerson;
 
   const normalPiscoMlPerDrink = state.glassType
-    ? usableVolume(GLASS_CONFIG[state.glassType].ml) *
-      LEVEL_RATIOS["normal"].liquor
+    ? drinkVolumes(state.glassType, GLASS_CONFIG[state.glassType].ml, LEVEL_RATIOS["normal"]).piscoMl
     : 0;
 
   /* ── Shortage notification (forward only) ── */

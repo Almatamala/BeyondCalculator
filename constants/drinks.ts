@@ -22,6 +22,6 @@ export const ICE_BAG_ML = 1090;
 
 // Single source of truth for glass types: label, volume, and image
 export const GLASS_CONFIG: Record<GlassType, { label: string; ml: number; image: any }> = {
-  vaso_rojo:   { label: "Vaso Rojo",   ml: 473, image: require("@/assets/images/vaso_rojo.webp") },
-  vaso_vidrio: { label: "Vaso Vidrio", ml: 350, image: require("@/assets/images/vaso_vidrio.webp") },
+  vaso_rojo:   { label: "Vaso Rojo",   ml: 454, image: require("@/assets/images/vaso_rojo.webp") },
+  vaso_vidrio: { label: "Vaso Vidrio", ml: 368, image: require("@/assets/images/vaso_vidrio.webp") },
 };
