@@ -71,11 +71,11 @@ export default function InfoModal({ visible, onClose }: Props) {
             </Text>
             <View style={styles.formulaBox}>
               <Text style={styles.formulaText}>
-                Pisco = % Pisco x volumen total - hielo  
+                Pisco = % Pisco x Volumen total - Hielo 
               </Text>
 
               <Text style={styles.formulaText}>
-                Bebida = volumen total x 0.9 - Pisco - Hielo
+                Bebida = Volumen total x 0.9 - Pisco - Hielo
               </Text>
             </View>
           </Section>
