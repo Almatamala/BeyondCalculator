@@ -1135,9 +1135,11 @@ export default function CalculatorScreen() {
         </View>
         <Text style={styles.infoNotificationText}>
           Los vasos se llenan hasta el{" "}
-          <Text style={{ fontWeight: "bold" }}>90% solamente</Text> y que se
-          usan <Text style={{ fontWeight: "bold" }}>3 hielos</Text> (
-          <Text style={{ fontWeight: "bold" }}>120 ml</Text> aprox).
+          <Text style={{ fontWeight: "bold" }}>90%</Text> y se usan{" "}
+          <Text style={{ fontWeight: "bold" }}>3 cubos de hielo (~90 ml)</Text>.
+          El porcentaje de pisco{" "}
+          <Text style={{ fontWeight: "bold" }}>se mide considerando el volumen de hielo </Text>
+          , por lo que el pisco ocupa menos espacio del que parece.
         </Text>
       </Animated.View>
     </View>
