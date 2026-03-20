@@ -18,6 +18,7 @@ import BebidaSizeModal from "@/components/calculator/BebidaSizeModal";
 import BottleInput from "@/components/calculator/BottleInput";
 import BottlePercentageModal from "@/components/calculator/BottlePercentageModal";
 import GlassSelector from "@/components/calculator/GlassSelector";
+import InfoModal from "@/components/calculator/InfoModal";
 import LevelPicker from "@/components/calculator/LevelPicker";
 import ModeSelector from "@/components/calculator/ModeSelector";
 import PersonList from "@/components/calculator/PersonList";
@@ -286,12 +287,7 @@ export default function CalculatorScreen() {
   const [notifVisible, setNotifVisible] = useState(false);
   const [displayMsg, setDisplayMsg] = useState("");
 
-  const infoOpacity = useRef(new Animated.Value(0)).current;
-  const infoTranslateX = useRef(new Animated.Value(0)).current;
-  const infoTranslateY = infoOpacity.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-16, 0],
-  });
+  
 
   const dismiss = useCallback(() => {
     if (notifTimeout.current) clearTimeout(notifTimeout.current);
@@ -342,63 +338,9 @@ export default function CalculatorScreen() {
     }),
   ).current;
 
-  const dismissInfo = useCallback(() => {
-    Animated.parallel([
-      Animated.timing(infoOpacity, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-      Animated.timing(infoTranslateX, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }),
-    ]).start(() => setInfoVisible(false));
-  }, [infoOpacity, infoTranslateX]);
-
-  const infoPanResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gs) =>
-        Math.abs(gs.dx) > 8 && Math.abs(gs.dx) > Math.abs(gs.dy),
-      onPanResponderMove: (_, gs) => infoTranslateX.setValue(gs.dx),
-      onPanResponderRelease: (_, gs) => {
-        if (Math.abs(gs.dx) > 80) {
-          Animated.parallel([
-            Animated.timing(infoTranslateX, {
-              toValue: gs.dx > 0 ? 500 : -500,
-              duration: 220,
-              useNativeDriver: true,
-            }),
-            Animated.timing(infoOpacity, {
-              toValue: 0,
-              duration: 220,
-              useNativeDriver: true,
-            }),
-          ]).start(() => {
-            infoTranslateX.setValue(0);
-            setInfoVisible(false);
-          });
-        } else {
-          Animated.spring(infoTranslateX, {
-            toValue: 0,
-            useNativeDriver: true,
-          }).start();
-        }
-      },
-    }),
-  ).current;
-
   const showInfo = useCallback(() => {
-    infoTranslateX.setValue(0);
-    infoOpacity.setValue(0);
     setInfoVisible(true);
-    Animated.timing(infoOpacity, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, [infoOpacity, infoTranslateX]);
+  }, []);
 
   useEffect(() => {
     if (currentStep !== forwardResultStep || !anyShort) {
@@ -1111,37 +1053,7 @@ export default function CalculatorScreen() {
         />
         <Text style={styles.notificationText}>{displayMsg}</Text>
       </Animated.View>
-      <Animated.View
-        pointerEvents={infoVisible ? "box-only" : "none"}
-        style={[
-          styles.infoNotification,
-          {
-            opacity: infoOpacity,
-            transform: [
-              { translateY: infoTranslateY },
-              { translateX: infoTranslateX },
-            ],
-          },
-        ]}
-        {...infoPanResponder.panHandlers}
-      >
-        <View style={styles.infoNotificationHeader}>
-          <MaterialCommunityIcons
-            name="information-outline"
-            size={16}
-            color="#2d7d2d"
-          />
-          <Text style={styles.infoNotificationTitle}>Asumimos que:</Text>
-        </View>
-        <Text style={styles.infoNotificationText}>
-          Los vasos se llenan hasta el{" "}
-          <Text style={{ fontWeight: "bold" }}>90%</Text> y se usan{" "}
-          <Text style={{ fontWeight: "bold" }}>3 cubos de hielo (~90 ml)</Text>.
-          El porcentaje de pisco{" "}
-          <Text style={{ fontWeight: "bold" }}>se mide considerando el volumen de hielo </Text>
-          , por lo que el pisco ocupa menos espacio del que parece.
-        </Text>
-      </Animated.View>
+      <InfoModal visible={infoVisible} onClose={() => setInfoVisible(false)} />
     </View>
   );
 }
@@ -1247,40 +1159,7 @@ const styles = StyleSheet.create({
     color: "#b36b00",
     fontWeight: "500",
   },
-  infoNotification: {
-    position: "absolute",
-    top: 55,
-    left: 16,
-    right: 16,
-    zIndex: 999,
-    backgroundColor: "#f0f9f0",
-    borderWidth: 1,
-    borderColor: "#86c986",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  infoNotificationHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  infoNotificationTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#2d7d2d",
-  },
-  infoNotificationText: {
-    fontSize: 13,
-    color: "#2d7d2d",
-    lineHeight: 19,
-  },
+  
   // Reverse-specific styles
   modeToggleRow: {
     flexDirection: "row",
