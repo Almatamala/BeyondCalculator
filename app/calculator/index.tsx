@@ -865,72 +865,6 @@ export default function CalculatorScreen() {
     ),
   };
 
-  const stepIce: Step = {
-    question: "¿Y el hielo?",
-    content: (
-      <View style={styles.slideContent}>
-        <View style={styles.modeToggleRow}>
-          <TouchableOpacity
-            style={[
-              styles.modeToggle,
-              rev.iceInputMode === "manual" && styles.modeToggleActive,
-            ]}
-            onPress={() => setIceInputMode("manual")}
-          >
-            <Text
-              style={[
-                styles.modeToggleText,
-                rev.iceInputMode === "manual" && styles.modeToggleTextActive,
-              ]}
-            >
-              Por bolsas
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.modeToggle,
-              rev.iceInputMode === "auto" && styles.modeToggleActive,
-            ]}
-            onPress={() => setIceInputMode("auto")}
-          >
-            <Text
-              style={[
-                styles.modeToggleText,
-                rev.iceInputMode === "auto" && styles.modeToggleTextActive,
-              ]}
-            >
-              Que alcance nomás
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {rev.iceInputMode === "manual" && (
-          <View style={styles.sameMode}>
-            <View style={styles.counterGroup}>
-              <Text style={styles.counterLabel}>Bolsas de 1 kg</Text>
-              <CountPicker value={rev.iceKg} onChange={setIceKg} />
-            </View>
-          </View>
-        )}
-
-        {rev.iceInputMode === "auto" && (
-          <Text style={[styles.hint, { marginTop: 8 }]}>
-            El resultado asumirá que tienes todo el hielo que necesitas
-          </Text>
-        )}
-      </View>
-    ),
-    scrollable: false,
-    bottomContent: (
-      <TouchableOpacity
-        style={styles.confirmBtn}
-        onPress={goForward}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.confirmBtnText}>Confirmar →</Text>
-      </TouchableOpacity>
-    ),
-  };
 
   const stepLevelPeople: Step = {
     question: "¿Cómo se piensan hacer las piscolas?",
@@ -1005,7 +939,7 @@ export default function CalculatorScreen() {
       steps.push(stepPisco, stepBebida);
     }
 
-    steps.push(stepIce, stepLevelPeople, stepGlass, stepResult);
+    steps.push(stepLevelPeople, stepGlass, stepResult);
     return steps;
   };
 

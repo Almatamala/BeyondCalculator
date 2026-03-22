@@ -119,6 +119,9 @@ export default function ReverseResultCard({
           </View>
         </View>
       )}
+      <Text style={[styles.hint, { marginTop: 8 }]}>
+        El resultado asumirá que tienes todo el hielo que necesitas
+      </Text>
 
       <TouchableOpacity
         style={styles.resetBtn}
@@ -224,5 +227,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#666",
     fontWeight: "500",
+  },
+   hint: {
+    fontSize: 13,
+    color: "#9CA3AF",
+    textAlign: "center",
   },
 });

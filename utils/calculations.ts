@@ -1,4 +1,4 @@
-import { GLASS_CONFIG, ICE_BAG_ML, LEVEL_RATIOS, SODA_BOTTLE_SIZES } from "@/constants/drinks";
+import { GLASS_CONFIG, LEVEL_RATIOS, SODA_BOTTLE_SIZES } from "@/constants/drinks";
 import { CalculatorState, GlassType, ReverseState } from "@/types/calculator";
 
 // Glass is never filled to the brim
@@ -176,18 +176,12 @@ export function calculateReverseResults(reverse: ReverseState): ReverseCalculati
   const drinksFromBebida = bebidaPerDrink > 0 ? totalBebidaMl / bebidaPerDrink : Infinity;
 
   const icePerDrinkMl = icePerDrink(reverse.glassType);
-  let drinksFromIce = Infinity;
-  if (reverse.iceInputMode === "manual") {
-    const totalIceMl = reverse.iceKg * ICE_BAG_ML;
-    drinksFromIce = totalIceMl / icePerDrinkMl;
-  }
 
-  const minDrinks = Math.min(drinksFromPisco, drinksFromBebida, drinksFromIce);
+  const minDrinks = Math.min(drinksFromPisco, drinksFromBebida);
   const totalDrinks = Math.floor(minDrinks === Infinity ? 0 : minDrinks);
 
-  let limitingFactor: "pisco" | "bebida" | "hielo" = "pisco";
+  let limitingFactor: "pisco" | "bebida" = "pisco";
   if (minDrinks === drinksFromBebida) limitingFactor = "bebida";
-  else if (minDrinks === drinksFromIce) limitingFactor = "hielo";
 
   const drinksPerPerson = Math.floor(totalDrinks / reverse.peopleCount);
   const leftoverDrinks = totalDrinks % reverse.peopleCount;
@@ -213,26 +207,13 @@ export function calculateReverseResults(reverse: ReverseState): ReverseCalculati
         }
       }
     }
-    if (reverse.iceInputMode === "manual") {
-      const shortfall = maxFromPisco * icePerDrinkMl - reverse.iceKg * ICE_BAG_ML;
-      if (shortfall > 0) {
-        const remainder = shortfall % ICE_BAG_ML;
-        iceAddBags = remainder >= 0.25 * ICE_BAG_ML
-          ? Math.ceil(shortfall / ICE_BAG_ML)
-          : Math.floor(shortfall / ICE_BAG_ML);
-      }
-    }
   }
 
   let suggestion: ReverseSuggestion | null = null;
   if (bebidaAddMl > 0 || iceAddBags > 0) {
     const newBebidaMl = totalBebidaMl + bebidaAddMl;
     const newDrinksFromBebida = bebidaPerDrink > 0 ? newBebidaMl / bebidaPerDrink : Infinity;
-    const newDrinksFromIce =
-      reverse.iceInputMode === "manual"
-        ? ((reverse.iceKg + iceAddBags) * ICE_BAG_ML) / icePerDrinkMl
-        : Infinity;
-    const newTotal = Math.floor(Math.min(drinksFromPisco, newDrinksFromBebida, newDrinksFromIce));
+    const newTotal = Math.floor(Math.min(drinksFromPisco, newDrinksFromBebida));
     if (newTotal > totalDrinks) {
       suggestion = {
         bebidaAddMl,
