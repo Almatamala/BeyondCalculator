@@ -33,13 +33,6 @@ function buildSuggestionLabel(s: ReverseSuggestion): string {
       s.bebidaAddMl >= 1000 ? `${s.bebidaAddMl / 1000}L` : `${s.bebidaAddMl}mL`;
     parts.push(`1 bebida de ${size}`);
   }
-  if (s.iceAddBags > 0) {
-    parts.push(
-      s.iceAddBags === 1
-        ? "1 bolsa de hielo"
-        : `${s.iceAddBags} bolsas de hielo`,
-    );
-  }
   if (parts.length === 1) return parts[0];
   return `${parts[0]} y ${parts[1]}`;
 }

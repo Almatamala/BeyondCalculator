@@ -130,7 +130,6 @@ export function calculateResults(state: CalculatorState): CalculationResult {
 
 export interface ReverseSuggestion {
   bebidaAddMl: number;   // 0 = no bebida suggestion
-  iceAddBags: number;    // 0 = no ice suggestion
   newTotalDrinks: number;
   newDrinksPerPerson: number;
   newLeftoverDrinks: number;
@@ -140,7 +139,7 @@ export interface ReverseCalculationResult {
   totalDrinks: number;
   drinksPerPerson: number;
   leftoverDrinks: number;
-  limitingFactor: "pisco" | "bebida" | "hielo";
+  limitingFactor: "pisco" | "bebida";
   suggestion: ReverseSuggestion | null;
 }
 
@@ -175,8 +174,6 @@ export function calculateReverseResults(reverse: ReverseState): ReverseCalculati
   const drinksFromPisco = piscoPerDrink > 0 ? totalPiscoMl / piscoPerDrink : Infinity;
   const drinksFromBebida = bebidaPerDrink > 0 ? totalBebidaMl / bebidaPerDrink : Infinity;
 
-  const icePerDrinkMl = icePerDrink(reverse.glassType);
-
   const minDrinks = Math.min(drinksFromPisco, drinksFromBebida);
   const totalDrinks = Math.floor(minDrinks === Infinity ? 0 : minDrinks);
 
@@ -189,7 +186,6 @@ export function calculateReverseResults(reverse: ReverseState): ReverseCalculati
   // Suggestion: what to buy to better use the pisco capacity
   const maxFromPisco = piscoPerDrink > 0 ? Math.floor(totalPiscoMl / piscoPerDrink) : 0;
   let bebidaAddMl = 0;
-  let iceAddBags = 0;
 
   if (maxFromPisco > totalDrinks) {
     if (bebidaPerDrink > 0) {
@@ -210,14 +206,13 @@ export function calculateReverseResults(reverse: ReverseState): ReverseCalculati
   }
 
   let suggestion: ReverseSuggestion | null = null;
-  if (bebidaAddMl > 0 || iceAddBags > 0) {
+  if (bebidaAddMl > 0) {
     const newBebidaMl = totalBebidaMl + bebidaAddMl;
     const newDrinksFromBebida = bebidaPerDrink > 0 ? newBebidaMl / bebidaPerDrink : Infinity;
     const newTotal = Math.floor(Math.min(drinksFromPisco, newDrinksFromBebida));
     if (newTotal > totalDrinks) {
       suggestion = {
         bebidaAddMl,
-        iceAddBags,
         newTotalDrinks: newTotal,
         newDrinksPerPerson: Math.floor(newTotal / reverse.peopleCount),
         newLeftoverDrinks: newTotal % reverse.peopleCount,
