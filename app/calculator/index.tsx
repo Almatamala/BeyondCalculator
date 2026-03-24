@@ -25,7 +25,6 @@ import PersonList from "@/components/calculator/PersonList";
 import PromoExtraSelector from "@/components/calculator/PromoExtraSelector";
 import PromoInput from "@/components/calculator/PromoInput";
 import ResultCard from "@/components/calculator/ResultCard";
-import ReverseInputModeSelector from "@/components/calculator/ReverseInputModeSelector";
 import ReverseResultCard from "@/components/calculator/ReverseResultCard";
 import UseCaseSelector from "@/components/calculator/UseCaseSelector";
 import CountPicker from "@/components/countPicker";
@@ -665,18 +664,6 @@ export default function CalculatorScreen() {
     setPercentageModalVisible(false);
   };
 
-  // Reusable step builders
-  const stepInputModeSelector: Step = {
-    question: "¿Cómo van a ingresar el copete?",
-    content: (
-      <ReverseInputModeSelector
-        value={rev.reverseInputMode}
-        onSelect={handleReverseInputModeSelect}
-      />
-    ),
-    scrollable: false,
-  };
-
   const stepPromoInput: Step = {
     question: "Ingresa tus promos",
     content: (
@@ -1080,18 +1067,7 @@ export default function CalculatorScreen() {
 
   // Build reverse steps dynamically based on chosen path
   const buildReverseSteps = (): Step[] => {
-    const steps: Step[] = [stepInputModeSelector];
-
-    if (rev.reverseInputMode === "promos") {
-      steps.push(stepPromoInput, stepPromoExtraSelector);
-      if (rev.promoExtraMode === "add_more") {
-        steps.push(stepPisco, stepBebida);
-      }
-    } else {
-      // "separate" or still selecting — show pisco+bebida
-      steps.push(stepPisco, stepBebida);
-    }
-
+    const steps: Step[] = [stepPromoInput];
     steps.push(stepLevelPeople, stepGlass, stepResult);
     return steps;
   };

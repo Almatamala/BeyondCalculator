@@ -162,7 +162,7 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
         piscoEntries: [{ id: "1", sizeMl: 1000, count: 1 }],
         bebidaEntries: [{ id: "1", sizeMl: 3000, count: 1 }],
         bebidaDirectMl: 0,
-        promoExtraMode: null,
+        piscoDirectMl: 0,
       } : {}),
     }));
 
@@ -201,7 +201,7 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
     updateReverse(r => ({
       ...r,
       promoExtraMode: mode,
-      ...(mode === "add_more" ? { piscoEntries: [], bebidaEntries: [], bebidaDirectMl: 0 } : {}),
+      ...(mode === "add_more" ? { piscoEntries: [], bebidaEntries: [], bebidaDirectMl: 0, piscoDirectMl: 0 } : {}),
     }));
 
   const setPromoInputMode = (mode: PromoInputMode) =>

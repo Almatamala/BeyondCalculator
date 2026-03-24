@@ -161,9 +161,13 @@ export function calculateReverseResults(reverse: ReverseState): ReverseCalculati
   const usePromos = reverse.reverseInputMode === "promos";
   const useBottles = !usePromos || reverse.promoExtraMode === "add_more";
 
-  const bottlePiscoMl = useBottles ? reverse.piscoEntries.reduce((sum, e) => sum + e.sizeMl * e.count * ((e.percentageFull ?? 100) / 100), 0) : 0;
+  const bottlePiscoMl = useBottles 
+    ? (reverse.promoInputMode === "bottles" 
+        ? reverse.piscoEntries.reduce((sum, e) => sum + e.sizeMl * e.count * ((e.percentageFull ?? 100) / 100), 0) 
+        : reverse.piscoDirectMl)
+    : 0;
   const bottleBebidaMl = useBottles
-    ? (reverse.bebidaInputMode === "bottles"
+    ? (reverse.promoInputMode === "bottles"
         ? reverse.bebidaEntries.reduce((sum, e) => sum + e.sizeMl * e.count * ((e.percentageFull ?? 100) / 100), 0)
         : reverse.bebidaDirectMl)
     : 0;
