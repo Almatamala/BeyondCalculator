@@ -2,18 +2,17 @@ import React, { createContext, useContext, useState } from "react";
 
 import {
   BebidaInputMode,
-  BottleEntry,
   CalculatorState,
   DrinkLevel,
   GlassType,
   IceInputMode,
   Mode,
   Person,
-  PromoEntry,
   PromoExtraMode,
+  PromoInputMode,
   ReverseInputMode,
   ReverseState,
-  UseCase,
+  UseCase
 } from "@/types/calculator";
 
 interface CalculatorContextValue {
@@ -30,6 +29,7 @@ interface CalculatorContextValue {
   setLevel: (level: DrinkLevel) => void;
   setGlassType: (glass: GlassType) => void;
   setReverseInputMode: (mode: ReverseInputMode) => void;
+  setPromoInputMode: (mode: PromoInputMode) => void; // Add this line
   addPromoEntry: () => void;
   removePromoEntry: (id: string) => void;
   setPromoEntryPiscoSize: (id: string, sizeMl: number) => void;
@@ -40,6 +40,7 @@ interface CalculatorContextValue {
   setPiscoEntrySize: (id: string, sizeMl: number) => void;
   addPiscoEntry: (sizeMl?: number) => void;
   removePiscoEntry: (id: string) => void;
+  setPiscoDirectMl: (ml: number) => void; // Add this line
   setBebidaInputMode: (mode: BebidaInputMode) => void;
   setBebidaEntryCount: (id: string, count: number) => void;
   setBebidaEntrySize: (id: string, sizeMl: number) => void;
@@ -57,14 +58,14 @@ interface CalculatorContextValue {
 
 const initialReverse: ReverseState = {
   reverseInputMode: null,
+  promoInputMode: "bottles", // Add this line
   promoEntries: [{ id: "1", piscoSizeMl: 1000, bebidaSizeMl: 1500, count: 1 }],
   promoExtraMode: null,
   piscoEntries: [{ id: "1", sizeMl: 1000, count: 1 }],
+  piscoDirectMl: 0, // Add this line
   bebidaInputMode: "bottles",
   bebidaEntries: [{ id: "1", sizeMl: 3000, count: 1 }],
   bebidaDirectMl: 0,
-  iceInputMode: "manual",
-  iceKg: 1,
   level: "normal",
   peopleCount: 1,
   glassType: null,
@@ -203,6 +204,12 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
       ...(mode === "add_more" ? { piscoEntries: [], bebidaEntries: [], bebidaDirectMl: 0 } : {}),
     }));
 
+  const setPromoInputMode = (mode: PromoInputMode) =>
+    updateReverse(r => ({ ...r, promoInputMode: mode }));
+
+  const setPiscoDirectMl = (ml: number) =>
+    updateReverse(r => ({ ...r, piscoDirectMl: ml }));
+
   // --- Reverse: Pisco entries ---
 
   const setPiscoEntryCount = (id: string, count: number) =>
@@ -306,6 +313,7 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
         setLevel,
         setGlassType,
         setReverseInputMode,
+        setPromoInputMode, // Add this line
         addPromoEntry,
         removePromoEntry,
         setPromoEntryPiscoSize,
@@ -316,6 +324,7 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
         setPiscoEntrySize,
         addPiscoEntry,
         removePiscoEntry,
+        setPiscoDirectMl, // Add this line
         setBebidaInputMode,
         setBebidaEntryCount,
         setBebidaEntrySize,

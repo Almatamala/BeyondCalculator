@@ -18,6 +18,36 @@ function formatSize(ml: number): string {
   return ml >= 1000 ? `${ml / 1000}L` : `${ml}ml`;
 }
 
+const SizeSelector = ({
+  label,
+  sizes,
+  selectedSize,
+  onSizeChange,
+}: {
+  label: string;
+  sizes: readonly number[];
+  selectedSize: number;
+  onSizeChange: (size: number) => void;
+}) => (
+  <View style={styles.sizeSection}>
+    <Text style={styles.sizeLabel}>{label}</Text>
+    <View style={styles.pillRow}>
+      {sizes.map((size) => (
+        <TouchableOpacity
+          key={size}
+          style={[styles.pill, selectedSize === size && styles.pillActive]}
+          onPress={() => onSizeChange(size)}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.pillText, selectedSize === size && styles.pillTextActive]}>
+            {formatSize(size)}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  </View>
+);
+
 export default function PromoInput({
   entries,
   onPiscoSizeChange,
@@ -42,59 +72,19 @@ export default function PromoInput({
             )}
           </View>
 
-          {/* Pisco size */}
-          <View style={styles.sizeSection}>
-            <Text style={styles.sizeLabel}>Pisco</Text>
-            <View style={styles.pillRow}>
-              {PISCO_BOTTLE_SIZES.map((size) => (
-                <TouchableOpacity
-                  key={size}
-                  style={[
-                    styles.pill,
-                    entry.piscoSizeMl === size && styles.pillActive,
-                  ]}
-                  onPress={() => onPiscoSizeChange(entry.id, size)}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={[
-                      styles.pillText,
-                      entry.piscoSizeMl === size && styles.pillTextActive,
-                    ]}
-                  >
-                    {formatSize(size)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
+          <SizeSelector
+            label="Pisco"
+            sizes={PISCO_BOTTLE_SIZES}
+            selectedSize={entry.piscoSizeMl}
+            onSizeChange={(size) => onPiscoSizeChange(entry.id, size)}
+          />
 
-          {/* Bebida size */}
-          <View style={styles.sizeSection}>
-            <Text style={styles.sizeLabel}>Bebida</Text>
-            <View style={styles.pillRow}>
-              {SODA_BOTTLE_SIZES.map((size) => (
-                <TouchableOpacity
-                  key={size}
-                  style={[
-                    styles.pill,
-                    entry.bebidaSizeMl === size && styles.pillActive,
-                  ]}
-                  onPress={() => onBebidaSizeChange(entry.id, size)}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={[
-                      styles.pillText,
-                      entry.bebidaSizeMl === size && styles.pillTextActive,
-                    ]}
-                  >
-                    {formatSize(size)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
+          <SizeSelector
+            label="Bebida"
+            sizes={SODA_BOTTLE_SIZES}
+            selectedSize={entry.bebidaSizeMl}
+            onSizeChange={(size) => onBebidaSizeChange(entry.id, size)}
+          />
 
           {/* Quantity */}
           <View style={styles.countSection}>

@@ -6,6 +6,8 @@ export type GlassType = "vaso_rojo" | "vaso_vidrio";
 
 export type UseCase = "reverse" | "forward";
 
+export type PromoInputMode = "bottles" | "direct";
+
 export type BebidaInputMode = "bottles" | "direct";
 
 export type IceInputMode = "manual" | "auto";
@@ -37,9 +39,11 @@ export interface BottleEntry {
 
 export interface ReverseState {
   reverseInputMode: ReverseInputMode | null;
+  promoInputMode: PromoInputMode;
   promoEntries: PromoEntry[];
   promoExtraMode: PromoExtraMode | null;
   piscoEntries: BottleEntry[];
+  piscoDirectMl: number;
   bebidaInputMode: BebidaInputMode;
   bebidaEntries: BottleEntry[];
   bebidaDirectMl: number;

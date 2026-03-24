@@ -69,6 +69,7 @@ export default function CalculatorScreen() {
     setGlassType,
     // reverse actions
     setReverseInputMode,
+    setPromoInputMode,
     addPromoEntry,
     removePromoEntry,
     setPromoEntryPiscoSize,
@@ -79,14 +80,13 @@ export default function CalculatorScreen() {
     setPiscoEntrySize,
     addPiscoEntry,
     removePiscoEntry,
+    setPiscoDirectMl,
     setBebidaInputMode,
     setBebidaEntryCount,
     setBebidaEntrySize,
     addBebidaEntry,
     removeBebidaEntry,
     setBebidaDirectMl,
-    setIceInputMode,
-    setIceKg,
     setReverseLevel,
     setReversePeopleCount,
     setReverseGlassType,
@@ -101,6 +101,9 @@ export default function CalculatorScreen() {
 
   const [piscoBottleMl, setPiscoBottleMl] = useState(1000);
   const [sodaBottleMl, setSodaBottleMl] = useState(3000);
+
+  const [piscoDirectUnit, setPiscoDirectUnit] = useState<"mL" | "L">("L");
+  const [piscoDirectInputValue, setPiscoDirectInputValue] = useState("");
 
   const [bebidaModalVisible, setBebidaModalVisible] = useState(false);
   const [directUnit, setDirectUnit] = useState<"mL" | "L">("L");
@@ -457,7 +460,7 @@ export default function CalculatorScreen() {
   };
 
   /* ── Direct bebida input ── */
-  const handleDirectInputChange = (text: string) => {
+  const handleBebidaDirectInputChange = (text: string) => {
     setDirectInputValue(text);
     const num = parseFloat(text);
     if (!isNaN(num) && num >= 0) {
@@ -467,11 +470,29 @@ export default function CalculatorScreen() {
     }
   };
 
-  const handleDirectUnitToggle = (unit: "mL" | "L") => {
+  const handleBebidaDirectUnitToggle = (unit: "mL" | "L") => {
     setDirectUnit(unit);
     const num = parseFloat(directInputValue);
     if (!isNaN(num) && num >= 0) {
       setBebidaDirectMl(unit === "L" ? num * 1000 : num);
+    }
+  };
+
+  const handlePiscoDirectInputChange = (text: string) => {
+    setPiscoDirectInputValue(text);
+    const num = parseFloat(text);
+    if (!isNaN(num) && num >= 0) {
+      setPiscoDirectMl(piscoDirectUnit === "L" ? num * 1000 : num);
+    } else if (text === "") {
+      setPiscoDirectMl(0);
+    }
+  };
+
+  const handlePiscoDirectUnitToggle = (unit: "mL" | "L") => {
+    setPiscoDirectUnit(unit);
+    const num = parseFloat(piscoDirectInputValue);
+    if (!isNaN(num) && num >= 0) {
+      setPiscoDirectMl(unit === "L" ? num * 1000 : num);
     }
   };
 
@@ -659,14 +680,146 @@ export default function CalculatorScreen() {
   const stepPromoInput: Step = {
     question: "Ingresa tus promos",
     content: (
-      <PromoInput
-        entries={rev.promoEntries}
-        onPiscoSizeChange={setPromoEntryPiscoSize}
-        onBebidaSizeChange={setPromoEntryBebidaSize}
-        onCountChange={setPromoEntryCount}
-        onAdd={addPromoEntry}
-        onRemove={removePromoEntry}
-      />
+      <View style={styles.slideContent}>
+        <View style={styles.modeToggleRow}>
+          <TouchableOpacity
+            style={[
+              styles.modeToggle,
+              rev.promoInputMode === "bottles" && styles.modeToggleActive,
+            ]}
+            onPress={() => setPromoInputMode("bottles")}
+          >
+            <Text
+              style={[
+                styles.modeToggleText,
+                rev.promoInputMode === "bottles" && styles.modeToggleTextActive,
+              ]}
+            >
+              Por botellas
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.modeToggle,
+              rev.promoInputMode === "direct" && styles.modeToggleActive,
+            ]}
+            onPress={() => setPromoInputMode("direct")}
+          >
+            <Text
+              style={[
+                styles.modeToggleText,
+                rev.promoInputMode === "direct" && styles.modeToggleTextActive,
+              ]}
+            >
+              Directo en litros
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {rev.promoInputMode === "bottles" ? (
+          <PromoInput
+            entries={rev.promoEntries}
+            onAdd={addPromoEntry}
+            onRemove={removePromoEntry}
+            onPiscoSizeChange={setPromoEntryPiscoSize}
+            onBebidaSizeChange={setPromoEntryBebidaSize}
+            onCountChange={setPromoEntryCount}
+          />
+        ) : (
+          <View style={styles.directInputContainer}>
+            <Text >Pisco</Text>
+            <View style={styles.directInputContainer}>
+            <TextInput
+              style={styles.directInput}
+              value={piscoDirectInputValue}
+              onChangeText={handlePiscoDirectInputChange}
+              keyboardType="numeric"
+              placeholder="0"
+              placeholderTextColor="#ccc"
+            />
+            <View style={styles.unitToggleRow}>
+              <TouchableOpacity
+                style={[
+                  styles.unitToggle,
+                  piscoDirectUnit === "mL" && styles.unitToggleActive,
+                ]}
+                onPress={() => handlePiscoDirectUnitToggle("mL")}
+              >
+                <Text
+                  style={[
+                    styles.unitToggleText,
+                    piscoDirectUnit === "mL" && styles.unitToggleTextActive,
+                  ]}
+                >
+                  mL
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.unitToggle,
+                  piscoDirectUnit === "L" && styles.unitToggleActive,
+                ]}
+                onPress={() => handlePiscoDirectUnitToggle("L")}
+              >
+                <Text
+                  style={[
+                    styles.unitToggleText,
+                    piscoDirectUnit === "L" && styles.unitToggleTextActive,
+                  ]}
+                >
+                  L
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+            <Text >Bebida</Text>
+            <View style={styles.directInputContainer}>
+              <TextInput
+                style={styles.directInput}
+                value={directInputValue}
+                onChangeText={handleBebidaDirectInputChange}
+                keyboardType="numeric"
+                placeholder="0"
+                placeholderTextColor="#ccc"
+              />
+              <View style={styles.unitToggleRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.unitToggle,
+                    directUnit === "mL" && styles.unitToggleActive,
+                  ]}
+                  onPress={() => handleBebidaDirectUnitToggle("mL")}
+                >
+                  <Text
+                    style={[
+                      styles.unitToggleText,
+                      directUnit === "mL" && styles.unitToggleTextActive,
+                    ]}
+                  >
+                    mL
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.unitToggle,
+                    directUnit === "L" && styles.unitToggleActive,
+                  ]}
+                  onPress={() => handleBebidaDirectUnitToggle("L")}
+                >
+                  <Text
+                    style={[
+                      styles.unitToggleText,
+                      directUnit === "L" && styles.unitToggleTextActive,
+                    ]}
+                  >
+                    L
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
+      </View>
     ),
     bottomContent: (
       <TouchableOpacity
@@ -811,7 +964,7 @@ export default function CalculatorScreen() {
             <TextInput
               style={styles.directInput}
               value={directInputValue}
-              onChangeText={handleDirectInputChange}
+              onChangeText={handleBebidaDirectInputChange}
               keyboardType="numeric"
               placeholder="0"
               placeholderTextColor="#ccc"
@@ -822,7 +975,7 @@ export default function CalculatorScreen() {
                   styles.unitToggle,
                   directUnit === "mL" && styles.unitToggleActive,
                 ]}
-                onPress={() => handleDirectUnitToggle("mL")}
+                onPress={() => handleBebidaDirectUnitToggle("mL")}
               >
                 <Text
                   style={[
@@ -838,7 +991,7 @@ export default function CalculatorScreen() {
                   styles.unitToggle,
                   directUnit === "L" && styles.unitToggleActive,
                 ]}
-                onPress={() => handleDirectUnitToggle("L")}
+                onPress={() => handleBebidaDirectUnitToggle("L")}
               >
                 <Text
                   style={[
