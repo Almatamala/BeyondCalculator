@@ -61,10 +61,10 @@ const initialReverse: ReverseState = {
   promoInputMode: "bottles", // Add this line
   promoEntries: [{ id: "1", piscoSizeMl: 1000, bebidaSizeMl: 1500, count: 1 }],
   promoExtraMode: null,
-  piscoEntries: [{ id: "1", sizeMl: 1000, count: 1 }],
+  piscoEntries: [],
   piscoDirectMl: 0, // Add this line
   bebidaInputMode: "bottles",
-  bebidaEntries: [{ id: "1", sizeMl: 3000, count: 1 }],
+  bebidaEntries: [],
   bebidaDirectMl: 0,
   level: "normal",
   peopleCount: 1,

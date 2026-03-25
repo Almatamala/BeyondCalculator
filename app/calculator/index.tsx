@@ -273,6 +273,8 @@ export default function CalculatorScreen() {
     setCopied(false);
     setDirectUnit("L");
     setDirectInputValue("");
+    setPiscoDirectUnit("L");
+    setPiscoDirectInputValue("");
     setDirection("backward");
     setCurrentStep(0);
   };
@@ -665,7 +667,8 @@ export default function CalculatorScreen() {
   };
 
   const stepPromoInput: Step = {
-    question: "Ingresa tus promos",
+    question: "Ingresa tus promos, piscos y bebidas",
+    expandCard: true,
     content: (
       <View style={styles.slideContent}>
         <View style={styles.modeToggleRow}>
@@ -705,61 +708,84 @@ export default function CalculatorScreen() {
 
         {rev.promoInputMode === "bottles" ? (
           <PromoInput
-            entries={rev.promoEntries}
-            onAdd={addPromoEntry}
-            onRemove={removePromoEntry}
-            onPiscoSizeChange={setPromoEntryPiscoSize}
-            onBebidaSizeChange={setPromoEntryBebidaSize}
-            onCountChange={setPromoEntryCount}
+            promoEntries={rev.promoEntries}
+            piscoEntries={rev.piscoEntries}
+            bebidaEntries={rev.bebidaEntries}
+            onAddPromo={addPromoEntry}
+            onRemovePromo={removePromoEntry}
+            onPromoPiscoSizeChange={setPromoEntryPiscoSize}
+            onPromoBebidaSizeChange={setPromoEntryBebidaSize}
+            onPromoCountChange={setPromoEntryCount}
+            onAddPisco={() => {
+              const available = PISCO_BOTTLE_SIZES.filter(
+                (s) => !rev.piscoEntries.map((e) => e.sizeMl).includes(s)
+              );
+              if (available.length > 0) addPiscoEntry(available[0]);
+            }}
+            onRemovePisco={removePiscoEntry}
+            onPiscoEntryCountChange={setPiscoEntryCount}
+            onPiscoEntrySizeChange={setPiscoEntrySize}
+            onAddBebida={() => {
+              const available = SODA_BOTTLE_SIZES.filter(
+                (s) => !rev.bebidaEntries.map((e) => e.sizeMl).includes(s)
+              );
+              if (available.length > 0) addBebidaEntry(available[0]);
+            }}
+            onRemoveBebida={removeBebidaEntry}
+            onBebidaEntryCountChange={setBebidaEntryCount}
+            onBebidaEntrySizeChange={setBebidaEntrySize}
+            piscoLocked={piscoLocked}
+            bebidaLocked={bebidaBottleLocked}
+
           />
         ) : (
           <View style={styles.directInputContainer}>
-            <Text >Pisco</Text>
+            <Text>Pisco</Text>
             <View style={styles.directInputContainer}>
-            <TextInput
-              style={styles.directInput}
-              value={piscoDirectInputValue}
-              onChangeText={handlePiscoDirectInputChange}
-              keyboardType="numeric"
-              placeholder="0"
-              placeholderTextColor="#ccc"
-            />
-            <View style={styles.unitToggleRow}>
-              <TouchableOpacity
-                style={[
-                  styles.unitToggle,
-                  piscoDirectUnit === "mL" && styles.unitToggleActive,
-                ]}
-                onPress={() => handlePiscoDirectUnitToggle("mL")}
-              >
-                <Text
+              <TextInput
+                style={styles.directInput}
+                value={piscoDirectInputValue}
+                onChangeText={handlePiscoDirectInputChange}
+                keyboardType="numeric"
+                placeholder="0"
+                placeholderTextColor="#ccc"
+              />
+              <View style={styles.unitToggleRow}>
+                <TouchableOpacity
                   style={[
-                    styles.unitToggleText,
-                    piscoDirectUnit === "mL" && styles.unitToggleTextActive,
+                    styles.unitToggle,
+                    piscoDirectUnit === "mL" && styles.unitToggleActive,
                   ]}
+                  onPress={() => handlePiscoDirectUnitToggle("mL")}
                 >
-                  mL
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.unitToggle,
-                  piscoDirectUnit === "L" && styles.unitToggleActive,
-                ]}
-                onPress={() => handlePiscoDirectUnitToggle("L")}
-              >
-                <Text
+                  <Text
+                    style={[
+                      styles.unitToggleText,
+                      piscoDirectUnit === "mL" && styles.unitToggleTextActive,
+                    ]}
+                  >
+                    mL
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
                   style={[
-                    styles.unitToggleText,
-                    piscoDirectUnit === "L" && styles.unitToggleTextActive,
+                    styles.unitToggle,
+                    piscoDirectUnit === "L" && styles.unitToggleActive,
                   ]}
+                  onPress={() => handlePiscoDirectUnitToggle("L")}
                 >
-                  L
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.unitToggleText,
+                      piscoDirectUnit === "L" && styles.unitToggleTextActive,
+                    ]}
+                  >
+                    L
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-            <Text >Bebida</Text>
+            <Text>Bebida</Text>
             <View style={styles.directInputContainer}>
               <TextInput
                 style={styles.directInput}

@@ -63,21 +63,38 @@ export default function BottleInput({
           <Text style={styles.emptyText}>{emptyMessage}</Text>
         </View>
       ) : (
-        entries.map((entry) => {
+        entries.map((entry, index) => {
+          const isLastEntry = index === entries.length - 1;
+          const isCardLocked = effectiveLocked && !isLastEntry;
+
+          const usedSizes = entries
+            .filter((e) => e.id !== entry.id)
+            .map((e) => e.sizeMl);
+
+          const selectableSizes =
+            isLastEntry && effectiveLocked
+              ? availableSizes.filter((s) => !usedSizes.includes(s))
+              : availableSizes;
+
           const pct = entry.percentageFull ?? 100;
           return (
             <View key={entry.id} style={styles.card}>
               <View style={styles.cardHeader}>
-                {effectiveLocked ? (
+                {isCardLocked ? (
                   <View style={[styles.pill, styles.pillActive]}>
-                    <Text style={styles.pillTextActive}>{formatSize(entry.sizeMl)}</Text>
+                    <Text style={styles.pillTextActive}>
+                      {formatSize(entry.sizeMl)}
+                    </Text>
                   </View>
                 ) : (
                   <View style={styles.pillRow}>
-                    {availableSizes.map((size) => (
+                    {selectableSizes.map((size) => (
                       <TouchableOpacity
                         key={size}
-                        style={[styles.pill, entry.sizeMl === size && styles.pillActive]}
+                        style={[
+                          styles.pill,
+                          entry.sizeMl === size && styles.pillActive,
+                        ]}
                         onPress={() => onEntrySizeChange(entry.id, size)}
                         activeOpacity={0.7}
                       >
