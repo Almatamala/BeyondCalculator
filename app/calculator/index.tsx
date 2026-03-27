@@ -386,9 +386,9 @@ export default function CalculatorScreen() {
     const sodaSize =
       sodaBottleMl >= 1000 ? `${sodaBottleMl / 1000}L` : `${sodaBottleMl}mL`;
 
-    const piscoEmojis = "🍾".repeat(piscoCount);
-    const sodaEmojis = "🥤".repeat(sodaCount);
-    const iceEmojis = "🧊".repeat(iceKg);
+    const piscoEmojis = "🍾"
+    const sodaEmojis = "🥤"
+    const iceEmojis = "🧊"
 
     const piscoLabel = piscoCount === 1 ? "Pisco" : "Piscos";
     const sodaLabel = sodaCount === 1 ? "Bebida" : "Bebidas";
