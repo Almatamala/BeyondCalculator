@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Modal,
   StyleSheet,
@@ -27,18 +27,37 @@ const OPTIONS: PercentageOption[] = [
 interface Props {
   visible: boolean;
   currentPercentage: number;
-  onSelect: (percentage: number) => void;
+  /** When true, shows two action buttons instead of confirming on tap */
+  showSplit?: boolean;
+  onSelectAll: (percentage: number) => void;
+  onSelectOne?: (percentage: number) => void;
   onClose: () => void;
 }
 
 export default function BottlePercentageModal({
   visible,
   currentPercentage,
-  onSelect,
+  showSplit,
+  onSelectAll,
+  onSelectOne,
   onClose,
 }: Props) {
   const [editingCustom, setEditingCustom] = useState(false);
   const [customValue, setCustomValue] = useState("");
+  const [pendingPct, setPendingPct] = useState(currentPercentage);
+
+  useEffect(() => {
+    if (visible) setPendingPct(currentPercentage);
+  }, [visible, currentPercentage]);
+
+  const handleOptionPress = (value: number) => {
+    setEditingCustom(false);
+    if (showSplit) {
+      setPendingPct(value);
+    } else {
+      onSelectAll(value);
+    }
+  };
 
   const handleCustomChange = (text: string) => {
     setCustomValue(text);
@@ -49,7 +68,11 @@ export default function BottlePercentageModal({
     const clamped = Math.max(1, Math.min(100, num));
     setEditingCustom(false);
     setCustomValue("");
-    onSelect(clamped);
+    if (showSplit) {
+      setPendingPct(clamped);
+    } else {
+      onSelectAll(clamped);
+    }
   };
 
   const handleClose = () => {
@@ -58,7 +81,8 @@ export default function BottlePercentageModal({
     onClose();
   };
 
-  const isCustom = !OPTIONS.some((o) => o.value === currentPercentage);
+  const activePct = showSplit ? pendingPct : currentPercentage;
+  const isCustom = !OPTIONS.some((o) => o.value === activePct);
 
   return (
     <Modal
@@ -75,16 +99,13 @@ export default function BottlePercentageModal({
         <View style={styles.sheet}>
           <Text style={styles.sheetTitle}>Cuanto le queda a esta wea?</Text>
           {OPTIONS.map((opt) => {
-            const active = !editingCustom && currentPercentage === opt.value;
+            const active = !editingCustom && activePct === opt.value;
             return (
               <TouchableOpacity
                 key={opt.value}
                 style={[styles.option, active && styles.optionActive]}
                 activeOpacity={0.7}
-                onPress={() => {
-                  setEditingCustom(false);
-                  onSelect(opt.value);
-                }}
+                onPress={() => handleOptionPress(opt.value)}
               >
                 <View style={styles.optionIconWrap}>
                   <MaterialCommunityIcons
@@ -113,7 +134,7 @@ export default function BottlePercentageModal({
             style={[styles.option, (editingCustom || isCustom) && styles.optionActive]}
             activeOpacity={0.7}
             onPress={() => {
-              setCustomValue(isCustom ? String(currentPercentage) : "");
+              setCustomValue(isCustom ? String(activePct) : "");
               setEditingCustom(true);
             }}
           >
@@ -168,10 +189,30 @@ export default function BottlePercentageModal({
                   isCustom && styles.optionRatioActive,
                 ]}
               >
-                {isCustom ? `${currentPercentage}%` : "—"}
+                {isCustom ? `${activePct}%` : "—"}
               </Text>
             )}
           </TouchableOpacity>
+
+          {/* Split action buttons */}
+          {showSplit && (
+            <View style={styles.splitButtons}>
+              <TouchableOpacity
+                style={styles.splitBtn}
+                activeOpacity={0.8}
+                onPress={() => onSelectAll(pendingPct)}
+              >
+                <Text style={styles.splitBtnText}>Aplicar a todas</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.splitBtn, styles.splitBtnPrimary]}
+                activeOpacity={0.8}
+                onPress={() => onSelectOne?.(pendingPct)}
+              >
+                <Text style={[styles.splitBtnText, styles.splitBtnTextPrimary]}>Aplicar a 1 botella</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </TouchableOpacity>
     </Modal>
@@ -263,5 +304,29 @@ const styles = StyleSheet.create({
     margin: 0,
     borderWidth: 0,
     backgroundColor: "transparent",
+  },
+  splitButtons: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 4,
+  },
+  splitBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "#F5A623",
+  },
+  splitBtnPrimary: {
+    backgroundColor: "#F5A623",
+  },
+  splitBtnText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#F5A623",
+  },
+  splitBtnTextPrimary: {
+    color: "#fff",
   },
 });

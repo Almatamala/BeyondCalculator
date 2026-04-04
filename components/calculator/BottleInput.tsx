@@ -4,34 +4,24 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import CountPicker from "@/components/countPicker";
 import { BottleEntry } from "@/types/calculator";
 
-/**
- * BottleInput operates in two modes:
- *
- * **Default (group mode):** Each card = a size group with a CountPicker.
- * Sizes lock when >1 card to prevent duplicates. Used in "separate" flow.
- *
- * **singleBottleMode:** Each card = one physical bottle (size + percentage full).
- * No CountPicker, no size locking, duplicate sizes allowed.
- * Used when adding loose bottles on top of promos (fromPromos/add_more),
- * where users declare individual bottles they already have, possibly partial.
- */
 interface Props {
   entries: BottleEntry[];
   availableSizes: number[];
   onEntryCountChange: (id: string, count: number) => void;
   onEntrySizeChange: (id: string, sizeMl: number) => void;
-  onAdd: () => void;
   onRemove: (id: string) => void;
-  maxEntries: number;
-  addLabel: string;
-  locked: boolean;
   allowEmpty?: boolean;
   emptyMessage?: string;
-  emptyAddLabel?: string;
   showPercentage?: boolean;
   onPercentagePress?: (id: string) => void;
-  /** Each card = 1 bottle (no CountPicker, no size locking, duplicates OK) */
+  /** When true, no CountPicker is shown (each card = 1 physical bottle) */
   singleBottleMode?: boolean;
+  // kept for backward compat with callers, not used in rendering:
+  onAdd?: () => void;
+  maxEntries?: number;
+  addLabel?: string;
+  locked?: boolean;
+  emptyAddLabel?: string;
 }
 
 function formatSize(ml: number): string {
@@ -43,19 +33,13 @@ export default function BottleInput({
   availableSizes,
   onEntryCountChange,
   onEntrySizeChange,
-  onAdd,
   onRemove,
-  maxEntries,
-  addLabel,
-  locked,
   allowEmpty,
   emptyMessage,
-  emptyAddLabel,
   showPercentage,
   onPercentagePress,
   singleBottleMode,
 }: Props) {
-  const effectiveLocked = singleBottleMode ? false : locked;
   return (
     <View style={styles.container}>
       {entries.length === 0 && emptyMessage ? (
@@ -63,79 +47,62 @@ export default function BottleInput({
           <Text style={styles.emptyText}>{emptyMessage}</Text>
         </View>
       ) : (
-        entries.map((entry, index) => {
-          const isLastEntry = index === entries.length - 1;
-          const isCardLocked = effectiveLocked && !isLastEntry;
-
-          const usedSizes = entries
-            .filter((e) => e.id !== entry.id)
-            .map((e) => e.sizeMl);
-
-          const selectableSizes =
-            isLastEntry && effectiveLocked
-              ? availableSizes.filter((s) => !usedSizes.includes(s))
-              : availableSizes;
-
+        entries.map((entry) => {
           const pct = entry.percentageFull ?? 100;
+          const showRemove = entries.length > 1 || !!allowEmpty;
           return (
             <View key={entry.id} style={styles.card}>
               <View style={styles.cardHeader}>
-                {isCardLocked ? (
-                  <View style={[styles.pill, styles.pillActive]}>
-                    <Text style={styles.pillTextActive}>
-                      {formatSize(entry.sizeMl)}
-                    </Text>
-                  </View>
-                ) : (
-                  <View style={styles.pillRow}>
-                    {selectableSizes.map((size) => (
-                      <TouchableOpacity
-                        key={size}
+                <View style={styles.pillRow}>
+                  {availableSizes.map((size) => (
+                    <TouchableOpacity
+                      key={size}
+                      style={[
+                        styles.pill,
+                        entry.sizeMl === size && styles.pillActive,
+                      ]}
+                      onPress={() => onEntrySizeChange(entry.id, size)}
+                      activeOpacity={0.7}
+                    >
+                      <Text
                         style={[
-                          styles.pill,
-                          entry.sizeMl === size && styles.pillActive,
+                          styles.pillText,
+                          entry.sizeMl === size && styles.pillTextActive,
                         ]}
-                        onPress={() => onEntrySizeChange(entry.id, size)}
-                        activeOpacity={0.7}
                       >
-                        <Text
-                          style={[
-                            styles.pillText,
-                            entry.sizeMl === size && styles.pillTextActive,
-                          ]}
-                        >
-                          {formatSize(size)}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-                {(entries.length > 1 || allowEmpty) && (
-                  <TouchableOpacity
-                    style={styles.removeBtn}
-                    onPress={() => onRemove(entry.id)}
-                  >
-                    <Text style={styles.removeBtnText}>×</Text>
-                  </TouchableOpacity>
-                )}
+                        {formatSize(size)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <View style={styles.cardActions}>
+                  {showPercentage && (
+                    <TouchableOpacity
+                      style={[styles.percentagePill, pct < 100 && styles.percentagePillActive]}
+                      onPress={() => onPercentagePress?.(entry.id)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.percentagePillText, pct < 100 && styles.percentagePillTextActive]}>
+                        {pct}%
+                      </Text>
+                      <Text style={[styles.percentageChevron, pct < 100 && styles.percentagePillTextActive]}>▾</Text>
+                    </TouchableOpacity>
+                  )}
+                  {showRemove && (
+                    <TouchableOpacity
+                      style={styles.removeBtn}
+                      onPress={() => onRemove(entry.id)}
+                    >
+                      <Text style={styles.removeBtnText}>×</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
               {!singleBottleMode && (
                 <CountPicker
                   value={entry.count}
                   onChange={(count) => onEntryCountChange(entry.id, count)}
                 />
-              )}
-              {showPercentage && (
-                <TouchableOpacity
-                  style={styles.percentageBtn}
-                  onPress={() => onPercentagePress?.(entry.id)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.percentageBtnText}>
-                    {pct === 100 ? "Botella llena" : `${pct}% llena`}
-                  </Text>
-                  <Text style={styles.percentageChevron}>▾</Text>
-                </TouchableOpacity>
               )}
             </View>
           );
@@ -161,10 +128,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     width: "100%",
+    gap: 8,
   },
   pillRow: {
     flexDirection: "row",
     gap: 8,
+    flex: 1,
+    flexWrap: "wrap",
+  },
+  cardActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   pill: {
     paddingHorizontal: 14,
@@ -225,25 +200,31 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
   },
-  percentageBtn: {
+  percentagePill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    alignSelf: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    gap: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
     borderRadius: 20,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: "#ddd",
     backgroundColor: "#fff",
   },
-  percentageBtnText: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "#666",
+  percentagePillActive: {
+    borderColor: "#F5A623",
+    backgroundColor: "#FFF3E0",
+  },
+  percentagePillText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#888",
+  },
+  percentagePillTextActive: {
+    color: "#F5A623",
   },
   percentageChevron: {
-    fontSize: 12,
-    color: "#888",
+    fontSize: 10,
+    color: "#aaa",
   },
 });

@@ -29,6 +29,8 @@ interface Props {
 
   piscoLocked: boolean;
   bebidaLocked: boolean;
+  onPiscoPercentagePress?: (id: string) => void;
+  onBebidaPercentagePress?: (id: string) => void;
 }
 
 function formatSize(ml: number): string {
@@ -101,9 +103,11 @@ export default function PromoInput({
   onRemoveBebida,
   piscoLocked,
   bebidaLocked,
+  onPiscoPercentagePress,
+  onBebidaPercentagePress,
 }: Props) {
-  const piscoMaxed = piscoEntries.length >= PISCO_BOTTLE_SIZES.length;
-  const bebidaMaxed = bebidaEntries.length >= SODA_BOTTLE_SIZES.length;
+  const piscoMaxed = piscoEntries.length >= 5;
+  const bebidaMaxed = bebidaEntries.length >= 5;
   const isEmpty =
     promoEntries.length === 0 &&
     piscoEntries.length === 0 &&
@@ -163,6 +167,8 @@ export default function PromoInput({
                 addLabel=""
                 locked={piscoLocked}
                 allowEmpty={true}
+                showPercentage={!!onPiscoPercentagePress}
+                onPercentagePress={onPiscoPercentagePress}
               />
             </View>
           )}
@@ -181,6 +187,8 @@ export default function PromoInput({
                 addLabel=""
                 locked={bebidaLocked}
                 allowEmpty={true}
+                showPercentage={!!onBebidaPercentagePress}
+                onPercentagePress={onBebidaPercentagePress}
               />
             </View>
           )}
