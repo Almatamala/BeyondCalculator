@@ -47,6 +47,8 @@ export interface ReverseState {
   bebidaInputMode: BebidaInputMode;
   bebidaEntries: BottleEntry[];
   bebidaDirectMl: number;
+  piscoExtraEntries: BottleEntry[];
+  bebidaExtraEntries: BottleEntry[];
   level: DrinkLevel;
   peopleCount: number;
   glassType: GlassType | null;

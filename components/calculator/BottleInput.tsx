@@ -141,13 +141,6 @@ export default function BottleInput({
           );
         })
       )}
-      {entries.length < maxEntries && (
-        <TouchableOpacity style={styles.addBtn} onPress={onAdd} activeOpacity={0.7}>
-          <Text style={styles.addBtnText}>
-            {entries.length === 0 && emptyAddLabel ? emptyAddLabel : addLabel}
-          </Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 }

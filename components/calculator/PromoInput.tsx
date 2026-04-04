@@ -355,3 +355,6 @@ const styles = StyleSheet.create({
     gap: 6,
   },
 });
+
+export { DividerTitle };
+

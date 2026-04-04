@@ -37,7 +37,7 @@ export default function PromoExtraSelector({ value, onSelect }: Props) {
               isDone ? styles.titleLight : styles.titleDark,
             ]}
           >
-            Eso es todo
+            No
           </Text>
           <Text
             style={[
@@ -45,7 +45,7 @@ export default function PromoExtraSelector({ value, onSelect }: Props) {
               isDone ? styles.subtitleLight : styles.subtitleDark,
             ]}
           >
-            Solo tenemos las promos
+            Ya ingresamos todo
           </Text>
         </View>
       </TouchableOpacity>

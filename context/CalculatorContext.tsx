@@ -53,6 +53,15 @@ interface CalculatorContextValue {
   setReversePeopleCount: (count: number) => void;
   setReverseGlassType: (glass: GlassType) => void;
   setBottlePercentage: (type: "pisco" | "bebida", id: string, percentage: number) => void;
+  // Extra entries for stepBotellasIncompletas
+  setPiscoExtraEntryCount: (id: string, count: number) => void;
+  setPiscoExtraEntrySize: (id: string, sizeMl: number) => void;
+  addPiscoExtraEntry: (sizeMl?: number) => void;
+  removePiscoExtraEntry: (id: string) => void;
+  setBebidaExtraEntryCount: (id: string, count: number) => void;
+  setBebidaExtraEntrySize: (id: string, sizeMl: number) => void;
+  addBebidaExtraEntry: (sizeMl: number) => void;
+  removeBebidaExtraEntry: (id: string) => void;
   reset: () => void;
 }
 
@@ -66,6 +75,8 @@ const initialReverse: ReverseState = {
   bebidaInputMode: "bottles",
   bebidaEntries: [],
   bebidaDirectMl: 0,
+  piscoExtraEntries: [],
+  bebidaExtraEntries: [],
   level: "normal",
   peopleCount: 1,
   glassType: null,
@@ -201,7 +212,14 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
     updateReverse(r => ({
       ...r,
       promoExtraMode: mode,
-      ...(mode === "add_more" ? { piscoEntries: [], bebidaEntries: [], bebidaDirectMl: 0, piscoDirectMl: 0 } : {}),
+      ...(mode === "add_more" ? { 
+        piscoEntries: [], 
+        bebidaEntries: [], 
+        bebidaDirectMl: 0, 
+        piscoDirectMl: 0,
+        piscoExtraEntries: [],
+        bebidaExtraEntries: []
+      } : {}),
     }));
 
   const setPromoInputMode = (mode: PromoInputMode) =>
@@ -267,6 +285,58 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
       bebidaEntries: r.bebidaEntries.filter(e => e.id !== id),
     }));
 
+  // --- Reverse: Extra entries for stepBotellasIncompletas ---
+  const setPiscoExtraEntryCount = (id: string, count: number) =>
+    updateReverse(r => ({
+      ...r,
+      piscoExtraEntries: r.piscoExtraEntries.map(e => (e.id === id ? { ...e, count } : e)),
+    }));
+
+  const setPiscoExtraEntrySize = (id: string, sizeMl: number) =>
+    updateReverse(r => ({
+      ...r,
+      piscoExtraEntries: r.piscoExtraEntries.map(e => (e.id === id ? { ...e, sizeMl } : e)),
+    }));
+
+  const addPiscoExtraEntry = (sizeMl?: number) =>
+    updateReverse(r => {
+      const newSize = sizeMl ?? (r.piscoExtraEntries.some(e => e.sizeMl === 1000) ? 750 : 1000);
+      return {
+        ...r,
+        piscoExtraEntries: [...r.piscoExtraEntries, { id: String(Date.now()), sizeMl: newSize, count: 1 }],
+      };
+    });
+
+  const removePiscoExtraEntry = (id: string) =>
+    updateReverse(r => ({
+      ...r,
+      piscoExtraEntries: r.piscoExtraEntries.filter(e => e.id !== id),
+    }));
+
+  const setBebidaExtraEntryCount = (id: string, count: number) =>
+    updateReverse(r => ({
+      ...r,
+      bebidaExtraEntries: r.bebidaExtraEntries.map(e => (e.id === id ? { ...e, count } : e)),
+    }));
+
+  const setBebidaExtraEntrySize = (id: string, sizeMl: number) =>
+    updateReverse(r => ({
+      ...r,
+      bebidaExtraEntries: r.bebidaExtraEntries.map(e => (e.id === id ? { ...e, sizeMl } : e)),
+    }));
+
+  const addBebidaExtraEntry = (sizeMl: number) =>
+    updateReverse(r => ({
+      ...r,
+      bebidaExtraEntries: [...r.bebidaExtraEntries, { id: String(Date.now()), sizeMl, count: 1 }],
+    }));
+
+  const removeBebidaExtraEntry = (id: string) =>
+    updateReverse(r => ({
+      ...r,
+      bebidaExtraEntries: r.bebidaExtraEntries.filter(e => e.id !== id),
+    }));
+
   const setBebidaDirectMl = (ml: number) =>
     updateReverse(r => ({ ...r, bebidaDirectMl: ml }));
 
@@ -291,8 +361,14 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
     updateReverse(r => ({
       ...r,
       ...(type === "pisco"
-        ? { piscoEntries: r.piscoEntries.map(e => (e.id === id ? { ...e, percentageFull: percentage } : e)) }
-        : { bebidaEntries: r.bebidaEntries.map(e => (e.id === id ? { ...e, percentageFull: percentage } : e)) }),
+        ? { 
+            piscoEntries: r.piscoEntries.map(e => (e.id === id ? { ...e, percentageFull: percentage } : e)),
+            piscoExtraEntries: r.piscoExtraEntries.map(e => (e.id === id ? { ...e, percentageFull: percentage } : e))
+          }
+        : { 
+            bebidaEntries: r.bebidaEntries.map(e => (e.id === id ? { ...e, percentageFull: percentage } : e)),
+            bebidaExtraEntries: r.bebidaExtraEntries.map(e => (e.id === id ? { ...e, percentageFull: percentage } : e))
+          }),
     }));
 
   const reset = () => setState({ ...initialState, reverse: { ...initialReverse } });
@@ -331,6 +407,15 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
         addBebidaEntry,
         removeBebidaEntry,
         setBebidaDirectMl,
+        // Extra entries for stepBotellasIncompletas
+        setPiscoExtraEntryCount,
+        setPiscoExtraEntrySize,
+        addPiscoExtraEntry,
+        removePiscoExtraEntry,
+        setBebidaExtraEntryCount,
+        setBebidaExtraEntrySize,
+        addBebidaExtraEntry,
+        removeBebidaExtraEntry,
         setIceInputMode,
         setIceKg,
         setReverseLevel,

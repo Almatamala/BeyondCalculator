@@ -23,7 +23,7 @@ import LevelPicker from "@/components/calculator/LevelPicker";
 import ModeSelector from "@/components/calculator/ModeSelector";
 import PersonList from "@/components/calculator/PersonList";
 import PromoExtraSelector from "@/components/calculator/PromoExtraSelector";
-import PromoInput from "@/components/calculator/PromoInput";
+import PromoInput, { DividerTitle } from "@/components/calculator/PromoInput";
 import ResultCard from "@/components/calculator/ResultCard";
 import ReverseResultCard from "@/components/calculator/ReverseResultCard";
 import UseCaseSelector from "@/components/calculator/UseCaseSelector";
@@ -86,6 +86,15 @@ export default function CalculatorScreen() {
     addBebidaEntry,
     removeBebidaEntry,
     setBebidaDirectMl,
+    // Extra entries for stepBotellasIncompletas
+    setPiscoExtraEntryCount,
+    setPiscoExtraEntrySize,
+    addPiscoExtraEntry,
+    removePiscoExtraEntry,
+    setBebidaExtraEntryCount,
+    setBebidaExtraEntrySize,
+    addBebidaExtraEntry,
+    removeBebidaExtraEntry,
     setReverseLevel,
     setReversePeopleCount,
     setReverseGlassType,
@@ -638,8 +647,8 @@ export default function CalculatorScreen() {
   const rev = state.reverse;
   const piscoLocked = rev.piscoEntries.length > 1;
   const bebidaBottleLocked = rev.bebidaEntries.length > 1;
-  const fromPromos =
-    rev.reverseInputMode === "promos" && rev.promoExtraMode === "add_more";
+  // Siempre considerar fromPromos como true cuando estamos en modo promos
+  const fromPromos = rev.reverseInputMode === "promos";
 
   const handlePercentagePress = (type: "pisco" | "bebida", id: string) => {
     const entries = type === "pisco" ? rev.piscoEntries : rev.bebidaEntries;
@@ -846,7 +855,7 @@ export default function CalculatorScreen() {
   };
 
   const stepPromoExtraSelector: Step = {
-    question: "¿Tienen algo más aparte de las promos?",
+    question: "¿Tienen botellas incompletas?",
     content: (
       <PromoExtraSelector
         value={rev.promoExtraMode}
@@ -1091,9 +1100,111 @@ export default function CalculatorScreen() {
     ),
   };
 
+  // Nuevo step fusionado que combina pisco y bebida para el modo promos
+  const stepBotellasIncompletas: Step = {
+    question: "¿Tienen botellas sueltas adicionales?",
+    content: (
+      <View style={styles.slideContent}>
+        {rev.piscoExtraEntries.length > 0 && (
+          <View style={styles.section}>
+            <DividerTitle label="Pisco suelto" />
+            <BottleInput
+              entries={rev.piscoExtraEntries}
+              availableSizes={PISCO_BOTTLE_SIZES}
+              onEntryCountChange={setPiscoExtraEntryCount}
+              onEntrySizeChange={setPiscoExtraEntrySize}
+              onAdd={() => {}}
+              onRemove={removePiscoExtraEntry}
+              maxEntries={5}
+              addLabel=""
+              locked={piscoLocked}
+              allowEmpty={true}
+              showPercentage={true}
+              onPercentagePress={(id) => handlePercentagePress("pisco", id)}
+              singleBottleMode={true}
+            />
+          </View>
+        )}
+        
+        {rev.bebidaExtraEntries.length > 0 && (
+          <View style={styles.section}>
+            <DividerTitle label="Bebida suelta" />
+            <BottleInput
+              entries={rev.bebidaExtraEntries}
+              availableSizes={SODA_BOTTLE_SIZES}
+              onEntryCountChange={setBebidaExtraEntryCount}
+              onEntrySizeChange={setBebidaExtraEntrySize}
+              onAdd={() => {}}
+              onRemove={removeBebidaExtraEntry}
+              maxEntries={5}
+              addLabel={""}
+              locked={bebidaBottleLocked}
+              allowEmpty={true}
+              showPercentage={true}
+              onPercentagePress={(id) => handlePercentagePress("bebida", id)}
+              singleBottleMode={true}
+            />
+          </View>
+        )}
+        
+        {/* Mensajes vacíos y botones de agregar */}
+        {(rev.piscoExtraEntries.length === 0 && rev.bebidaExtraEntries.length === 0) && (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>Sin pisco ni bebida extra — puedes continuar o agregar botellas</Text>
+          </View>
+        )}
+        
+        <View style={styles.addButtonsRow}>
+          <TouchableOpacity
+            style={[styles.addBtnSmall, rev.piscoExtraEntries.length >= PISCO_BOTTLE_SIZES.length && styles.addBtnDisabled]}
+            onPress={() => addPiscoExtraEntry(1000)}
+            activeOpacity={0.7}
+            disabled={rev.piscoExtraEntries.length >= PISCO_BOTTLE_SIZES.length}
+          >
+            <Text 
+              style={[
+                styles.addBtnSmallText,
+                rev.piscoExtraEntries.length >= PISCO_BOTTLE_SIZES.length && styles.addBtnDisabledText,
+              ]}
+            >+ Pisco suelto</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.addBtnSmall, rev.bebidaExtraEntries.length >= SODA_BOTTLE_SIZES.length && styles.addBtnDisabled]}
+            onPress={() => addBebidaExtraEntry(1500)}
+            activeOpacity={0.7}
+            disabled={rev.bebidaExtraEntries.length >= SODA_BOTTLE_SIZES.length}
+          >
+            <Text 
+              style={[
+                styles.addBtnSmallText,
+                rev.bebidaExtraEntries.length >= SODA_BOTTLE_SIZES.length && styles.addBtnDisabledText,
+              ]}
+            >+ Bebida suelta</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    ),
+    bottomContent: (
+      <TouchableOpacity
+        style={styles.confirmBtn}
+        onPress={goForward}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.confirmBtnText}>Confirmar →</Text>
+      </TouchableOpacity>
+    ),
+  };
+
   // Build reverse steps dynamically based on chosen path
   const buildReverseSteps = (): Step[] => {
     const steps: Step[] = [stepPromoInput];
+    
+    // Siempre agregar el selector de promo extra
+    if (rev.promoInputMode === "bottles") {
+      steps.push(stepBotellasIncompletas);
+    }
+        
+    // Steps finales comunes
     steps.push(stepLevelPeople, stepGlass, stepResult);
     return steps;
   };
@@ -1312,5 +1423,62 @@ const styles = StyleSheet.create({
   },
   unitToggleTextActive: {
     color: "#fff",
+  },
+  section: {
+    gap: 12,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#374151",
+    marginBottom: 8,
+  },
+  emptyMessagesContainer: {
+    marginTop: 16,
+    gap: 8,
+  },
+  emptyMessage: {
+    fontSize: 14,
+    color: "#999",
+    textAlign: "center",
+    fontStyle: "italic",
+  },
+  addButtonsRow: {
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "space-between",
+  },
+  addBtnSmall: {
+    flex: 1,
+    paddingVertical: 10,
+    borderWidth: 1.5,
+    borderColor: "#F5A623",
+    borderRadius: 12,
+    borderStyle: "dashed",
+    alignItems: "center",
+  },
+  addBtnSmallText: {
+    fontSize: 14,
+    color: "#F5A623",
+    fontWeight: "600",
+  },
+  addBtnDisabled: {
+    borderColor: "#ccc",
+    backgroundColor: "#f9f9f9",
+  },
+  addBtnDisabledText: {
+    color: "#999",
+  },
+  emptyCard: {
+    backgroundColor: "#f0f0f0",
+    borderRadius: 14,
+    padding: 20,
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 14,
+    color: "#999",
+    textAlign: "center",
+    lineHeight: 20,
   },
 });

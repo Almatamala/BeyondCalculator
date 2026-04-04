@@ -151,16 +151,18 @@ export function calculateReverseResults(reverse: ReverseState): ReverseCalculati
   const ratio = LEVEL_RATIOS[reverse.level];
   const { piscoMl: piscoPerDrink, bebidaMl: bebidaPerDrink } = drinkVolumes(reverse.glassType, glassMl, ratio);
 
-  // Sum promo + pisco + bebida 
+  // Sum promo + pisco + bebida + extra entries
 
   const totalPiscoMl = reverse.promoInputMode === 'bottles'
     ? (reverse.promoEntries.reduce((sum, e) => sum + e.piscoSizeMl * e.count, 0) 
-    + reverse.piscoEntries.reduce((sum, e) => sum + e.sizeMl * e.count * ((e.percentageFull ?? 100) / 100), 0))
+    + reverse.piscoEntries.reduce((sum, e) => sum + e.sizeMl * e.count * ((e.percentageFull ?? 100) / 100), 0)
+    + reverse.piscoExtraEntries.reduce((sum, e) => sum + e.sizeMl * e.count * ((e.percentageFull ?? 100) / 100), 0))
     : reverse.piscoDirectMl;
 
   const totalBebidaMl = reverse.promoInputMode === 'bottles'
     ? (reverse.promoEntries.reduce((sum, e) => sum + e.bebidaSizeMl * e.count, 0)
-    + reverse.bebidaEntries.reduce((sum, e) => sum + e.sizeMl * e.count * ((e.percentageFull ?? 100) / 100), 0))
+    + reverse.bebidaEntries.reduce((sum, e) => sum + e.sizeMl * e.count * ((e.percentageFull ?? 100) / 100), 0)
+    + reverse.bebidaExtraEntries.reduce((sum, e) => sum + e.sizeMl * e.count * ((e.percentageFull ?? 100) / 100), 0))
     : reverse.bebidaDirectMl;
 
 
