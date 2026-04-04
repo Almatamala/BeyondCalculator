@@ -39,7 +39,6 @@ export default function InfoModal({ visible, onClose }: Props) {
         onPress={onClose}
       >
         <View style={styles.sheet}>
-
           {/* Header */}
           <View style={styles.header}>
             <MaterialCommunityIcons
@@ -53,9 +52,10 @@ export default function InfoModal({ visible, onClose }: Props) {
           {/* 1. Llenado */}
           <Section icon="cup-outline" title="Llenado y hielo">
             <Text style={styles.pointText}>
-              Los vasos se llenan al{" "}
+              Se asume que los vasos se llenan al{" "}
               <Text style={styles.bold}>90% de su capacidad</Text> y siempre se
-              usan <Text style={styles.bold}>3 cubos de hielo (~90 ml)</Text>.
+              usan{" "}
+              <Text style={styles.bold}>2-3 cubos de hielo (~60-90 ml)</Text>.
             </Text>
           </Section>
 
@@ -64,14 +64,13 @@ export default function InfoModal({ visible, onClose }: Props) {
           {/* 2. Forma + acomodo + fórmula fusionados */}
           <Section icon="shape-outline" title="Cálculo del pisco">
             <Text style={styles.pointText}>
-              Se calcula el porcentaje de pisco en relación a la{" "} 
+              Se calcula el porcentaje de pisco en relación a la{" "}
               <Text style={styles.bold}>forma del vaso </Text>
-              se le descuentan los cubos de hielo y la
-              bebida llena el resto:
+              se le descuentan los cubos de hielo y la bebida llena el resto:
             </Text>
             <View style={styles.formulaBox}>
               <Text style={styles.formulaText}>
-                Pisco = % Pisco x Volumen total - Hielo 
+                Pisco = % Pisco x Volumen total - Hielo
               </Text>
 
               <Text style={styles.formulaText}>
@@ -79,7 +78,6 @@ export default function InfoModal({ visible, onClose }: Props) {
               </Text>
             </View>
           </Section>
-
         </View>
       </TouchableOpacity>
     </Modal>

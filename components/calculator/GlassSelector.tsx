@@ -13,7 +13,7 @@ interface Props {
 
 export default function GlassSelector({ value, onChange }: Props) {
   return (
-    <View style={styles.row}>
+    <View style={styles.grid}>
       {GLASSES.map(glass => {
         const config = GLASS_CONFIG[glass];
         const active = value === glass;
@@ -39,12 +39,13 @@ export default function GlassSelector({ value, onChange }: Props) {
 }
 
 const styles = StyleSheet.create({
-  row: {
+  grid: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
   },
   card: {
-    flex: 1,
+    width: "47%",
     alignItems: "center",
     padding: 16,
     borderWidth: 2,

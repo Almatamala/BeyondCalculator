@@ -31,6 +31,31 @@ function vasoVidrioIceBelow(p: number): number {
 }
 
 // ---------------------------------------------------------------------------
+// Vaso Largo: frustum, r_bottom=2.5cm, r_top=4.0cm, height=10.5cm → ~355ml
+// Ice: 2 cubes × 30ml = 60ml. Both stack vertically (same layout as vaso vidrio).
+// ---------------------------------------------------------------------------
+const VASO_LARGO_R_BOTTOM   = 2.5;
+const VASO_LARGO_R_TOP      = 4.0;
+const VASO_LARGO_HEIGHT     = 10.5;
+const VASO_LARGO_ICE_ML     = 60;
+const VASO_LARGO_CUBE_EDGE  = Math.cbrt(30); // ≈ 3.107cm
+const VASO_LARGO_H_ICE      = (2 * VASO_LARGO_CUBE_EDGE) / VASO_LARGO_HEIGHT; // ≈ 0.505
+
+/** Height fraction → volume fraction for vaso largo (frustum). */
+function vasoLargoVf(p: number): number {
+  const rB = VASO_LARGO_R_BOTTOM, rT = VASO_LARGO_R_TOP;
+  const rH = rB + (rT - rB) * p;
+  return (p * (rB * rB + rB * rH + rH * rH)) / (rB * rB + rB * rT + rT * rT);
+}
+
+/** Ice volume below height fraction p for vaso largo (2 cubes stacked). */
+function vasoLargoIceBelow(p: number): number {
+  if (p <= 0)                  return 0;
+  if (p >= VASO_LARGO_H_ICE)  return VASO_LARGO_ICE_ML;
+  return VASO_LARGO_ICE_ML * (p / VASO_LARGO_H_ICE);
+}
+
+// ---------------------------------------------------------------------------
 // Vaso Rojo: frustum, r_bottom=2.5cm, r_top=4.5cm, height=11.5cm → ~454ml
 // Ice: 3 cubes × 30ml = 90ml. 1 cube at bottom, 2 side-by-side above it.
 // ---------------------------------------------------------------------------
@@ -59,7 +84,9 @@ function vasoRojoIceBelow(p: number): number {
 
 /** Ice displaced per drink, varies by glass type. */
 export function icePerDrink(glassType: GlassType): number {
-  return glassType === "vaso_rojo" ? VASO_ROJO_ICE_ML : VASO_VIDRIO_ICE_ML;
+  if (glassType === "vaso_rojo")   return VASO_ROJO_ICE_ML;
+  if (glassType === "vaso_largo")  return VASO_LARGO_ICE_ML;
+  return VASO_VIDRIO_ICE_ML;
 }
 
 /**
@@ -80,8 +107,8 @@ export function drinkVolumes(
 ): { piscoMl: number; bebidaMl: number } {
   const p = Math.max(0, Math.min(1, ratio.liquor));
 
-  const vf:         number = glassType === "vaso_rojo" ? vasoRojoVf(p)        : vasoVidrioVf(p);
-  const iceBelow:   number = glassType === "vaso_rojo" ? vasoRojoIceBelow(p)  : vasoVidrioIceBelow(p);
+  const vf:         number = glassType === "vaso_rojo" ? vasoRojoVf(p)       : glassType === "vaso_largo" ? vasoLargoVf(p)       : vasoVidrioVf(p);
+  const iceBelow:   number = glassType === "vaso_rojo" ? vasoRojoIceBelow(p) : glassType === "vaso_largo" ? vasoLargoIceBelow(p) : vasoVidrioIceBelow(p);
   const iceTotalMl: number = icePerDrink(glassType);
 
   const maxPisco = glassMl * FILL_RATIO - iceTotalMl;

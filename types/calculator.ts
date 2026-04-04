@@ -2,7 +2,7 @@ export type Mode = "same" | "personalized";
 
 export type DrinkLevel = "algo piola" | "normal" | "'algo piola'" | "desquiciado" | "personalizado";
 
-export type GlassType = "vaso_rojo" | "vaso_vidrio";
+export type GlassType = "vaso_rojo" | "vaso_vidrio" | "vaso_largo";
 
 export type UseCase = "reverse" | "forward";
 

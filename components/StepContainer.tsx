@@ -64,6 +64,8 @@ const StepContainer = forwardRef<StepContainerRef, Props>(
     const step = steps[currentStep];
     const scrollRef = useRef<ScrollView>(null);
 
+    if (!step) return null;
+
     const isLastStep = currentStep === steps.length - 1;
     const pulseScale = useSharedValue(1);
     const glowOpacity = useSharedValue(0);

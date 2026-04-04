@@ -586,7 +586,7 @@ export default function CalculatorScreen() {
       content: (
         <GlassSelector value={state.glassType} onChange={handleGlassSelect} />
       ),
-      scrollable: false,
+      fitContent: true,
     },
     {
       question: "Esto es lo que necesitan",
@@ -1083,7 +1083,7 @@ export default function CalculatorScreen() {
         onChange={handleReverseGlassSelect}
       />
     ),
-    scrollable: false,
+    fitContent: true,
   };
 
   const stepResult: Step = {
