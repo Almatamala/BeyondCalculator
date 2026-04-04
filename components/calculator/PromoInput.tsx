@@ -157,10 +157,7 @@ export default function PromoInput({
                 availableSizes={PISCO_BOTTLE_SIZES}
                 onEntryCountChange={onPiscoEntryCountChange}
                 onEntrySizeChange={onPiscoEntrySizeChange}
-                onAdd={() => {}}
                 onRemove={onRemovePisco}
-                maxEntries={piscoEntries.length}
-                addLabel=""
                 locked={piscoLocked}
                 allowEmpty={true}
               />
@@ -175,10 +172,7 @@ export default function PromoInput({
                 availableSizes={SODA_BOTTLE_SIZES}
                 onEntryCountChange={onBebidaEntryCountChange}
                 onEntrySizeChange={onBebidaEntrySizeChange}
-                onAdd={() => {}}
                 onRemove={onRemoveBebida}
-                maxEntries={bebidaEntries.length}
-                addLabel=""
                 locked={bebidaLocked}
                 allowEmpty={true}
               />

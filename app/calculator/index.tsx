@@ -14,7 +14,6 @@ import {
   View,
 } from "react-native";
 
-import BebidaSizeModal from "@/components/calculator/BebidaSizeModal";
 import BottleInput from "@/components/calculator/BottleInput";
 import BottlePercentageModal from "@/components/calculator/BottlePercentageModal";
 import GlassSelector from "@/components/calculator/GlassSelector";
@@ -22,7 +21,6 @@ import InfoModal from "@/components/calculator/InfoModal";
 import LevelPicker from "@/components/calculator/LevelPicker";
 import ModeSelector from "@/components/calculator/ModeSelector";
 import PersonList from "@/components/calculator/PersonList";
-import PromoExtraSelector from "@/components/calculator/PromoExtraSelector";
 import PromoInput, { DividerTitle } from "@/components/calculator/PromoInput";
 import ResultCard from "@/components/calculator/ResultCard";
 import ReverseResultCard from "@/components/calculator/ReverseResultCard";
@@ -42,9 +40,7 @@ import { useCalculator } from "@/context/CalculatorContext";
 import {
   GlassType,
   Mode,
-  PromoExtraMode,
-  ReverseInputMode,
-  UseCase,
+  UseCase
 } from "@/types/calculator";
 import {
   calculateResults,
@@ -67,20 +63,17 @@ export default function CalculatorScreen() {
     setLevel,
     setGlassType,
     // reverse actions
-    setReverseInputMode,
     setPromoInputMode,
     addPromoEntry,
     removePromoEntry,
     setPromoEntryPiscoSize,
     setPromoEntryBebidaSize,
     setPromoEntryCount,
-    setPromoExtraMode,
     setPiscoEntryCount,
     setPiscoEntrySize,
     addPiscoEntry,
     removePiscoEntry,
     setPiscoDirectMl,
-    setBebidaInputMode,
     setBebidaEntryCount,
     setBebidaEntrySize,
     addBebidaEntry,
@@ -113,7 +106,6 @@ export default function CalculatorScreen() {
   const [piscoDirectUnit, setPiscoDirectUnit] = useState<"mL" | "L">("L");
   const [piscoDirectInputValue, setPiscoDirectInputValue] = useState("");
 
-  const [bebidaModalVisible, setBebidaModalVisible] = useState(false);
   const [directUnit, setDirectUnit] = useState<"mL" | "L">("L");
   const [directInputValue, setDirectInputValue] = useState("");
 
@@ -435,38 +427,9 @@ export default function CalculatorScreen() {
     setTimeout(goForward, 100);
   };
 
-  const handleReverseInputModeSelect = (mode: ReverseInputMode) => {
-    setReverseInputMode(mode);
-    setTimeout(goForward, 100);
-  };
-
-  const handlePromoExtraModeSelect = (mode: PromoExtraMode) => {
-    setPromoExtraMode(mode);
-    setTimeout(goForward, 100);
-  };
-
   const handleAddPerson = () => {
     addPerson();
     setTimeout(() => containerRef.current?.scrollContentToEnd(), 50);
-  };
-
-  /* ── Bebida modal helpers ── */
-  const usedBebidaSizes = state.reverse.bebidaEntries.map((e) => e.sizeMl);
-  const availableBebidaSizes = SODA_BOTTLE_SIZES.filter(
-    (s) => !usedBebidaSizes.includes(s),
-  );
-
-  const handleBebidaAdd = () => {
-    if (availableBebidaSizes.length === 1) {
-      addBebidaEntry(availableBebidaSizes[0]);
-    } else {
-      setBebidaModalVisible(true);
-    }
-  };
-
-  const handleBebidaSizeSelect = (sizeMl: number) => {
-    addBebidaEntry(sizeMl);
-    setBebidaModalVisible(false);
   };
 
   /* ── Direct bebida input ── */
@@ -647,8 +610,6 @@ export default function CalculatorScreen() {
   const rev = state.reverse;
   const piscoLocked = rev.piscoEntries.length > 1;
   const bebidaBottleLocked = rev.bebidaEntries.length > 1;
-  // Siempre considerar fromPromos como true cuando estamos en modo promos
-  const fromPromos = rev.reverseInputMode === "promos";
 
   const handlePercentagePress = (type: "pisco" | "bebida", id: string) => {
     const entries = type === "pisco" ? rev.piscoEntries : rev.bebidaEntries;
@@ -854,193 +815,6 @@ export default function CalculatorScreen() {
     ),
   };
 
-  const stepPromoExtraSelector: Step = {
-    question: "¿Tienen botellas incompletas?",
-    content: (
-      <PromoExtraSelector
-        value={rev.promoExtraMode}
-        onSelect={handlePromoExtraModeSelect}
-      />
-    ),
-    scrollable: false,
-  };
-
-  const stepPisco: Step = {
-    question: fromPromos
-      ? "Ingresa el Pisco suelto adicional"
-      : "Ingresa el Pisco que tienen o planean comprar",
-    content: (
-      <BottleInput
-        entries={rev.piscoEntries}
-        availableSizes={PISCO_BOTTLE_SIZES}
-        onEntryCountChange={setPiscoEntryCount}
-        onEntrySizeChange={setPiscoEntrySize}
-        onAdd={fromPromos ? () => addPiscoEntry(1000) : () => addPiscoEntry()}
-        onRemove={removePiscoEntry}
-        maxEntries={fromPromos ? 5 : 2}
-        addLabel={
-          fromPromos
-            ? "+ Agregar otra botella"
-            : "+ Añadir botellas de otro tamaño"
-        }
-        locked={piscoLocked}
-        allowEmpty={fromPromos}
-        emptyMessage={
-          fromPromos
-            ? "Sin pisco extra — puedes continuar o agregar botellas"
-            : undefined
-        }
-        emptyAddLabel={fromPromos ? "+ Agregar pisco suelto" : undefined}
-        showPercentage={fromPromos}
-        onPercentagePress={(id) => handlePercentagePress("pisco", id)}
-        singleBottleMode={fromPromos}
-      />
-    ),
-    bottomContent: (
-      <TouchableOpacity
-        style={styles.confirmBtn}
-        onPress={goForward}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.confirmBtnText}>Confirmar →</Text>
-      </TouchableOpacity>
-    ),
-  };
-
-  const stepBebida: Step = {
-    question: fromPromos ? "¿Y bebida suelta adicional?" : "¿Y la bebida?",
-    content: (
-      <View style={styles.slideContent}>
-        <View style={styles.modeToggleRow}>
-          <TouchableOpacity
-            style={[
-              styles.modeToggle,
-              rev.bebidaInputMode === "bottles" && styles.modeToggleActive,
-            ]}
-            onPress={() => setBebidaInputMode("bottles")}
-          >
-            <Text
-              style={[
-                styles.modeToggleText,
-                rev.bebidaInputMode === "bottles" &&
-                  styles.modeToggleTextActive,
-              ]}
-            >
-              Por botellas
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.modeToggle,
-              rev.bebidaInputMode === "direct" && styles.modeToggleActive,
-            ]}
-            onPress={() => setBebidaInputMode("direct")}
-          >
-            <Text
-              style={[
-                styles.modeToggleText,
-                rev.bebidaInputMode === "direct" && styles.modeToggleTextActive,
-              ]}
-            >
-              Directo en litros
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {rev.bebidaInputMode === "bottles" ? (
-          <>
-            <BottleInput
-              entries={rev.bebidaEntries}
-              availableSizes={SODA_BOTTLE_SIZES}
-              onEntryCountChange={setBebidaEntryCount}
-              onEntrySizeChange={setBebidaEntrySize}
-              onAdd={fromPromos ? () => addBebidaEntry(1500) : handleBebidaAdd}
-              onRemove={removeBebidaEntry}
-              maxEntries={fromPromos ? 5 : 4}
-              addLabel={
-                fromPromos
-                  ? "+ Agregar otra botella"
-                  : "+ Añadir botellas de otro tamaño"
-              }
-              locked={bebidaBottleLocked}
-              allowEmpty={fromPromos}
-              emptyMessage={
-                fromPromos
-                  ? "Sin bebida extra — puedes continuar o agregar botellas"
-                  : undefined
-              }
-              emptyAddLabel={fromPromos ? "+ Agregar bebida suelta" : undefined}
-              showPercentage={fromPromos}
-              onPercentagePress={(id) => handlePercentagePress("bebida", id)}
-              singleBottleMode={fromPromos}
-            />
-            <BebidaSizeModal
-              visible={bebidaModalVisible}
-              availableSizes={availableBebidaSizes}
-              onSelect={handleBebidaSizeSelect}
-              onClose={() => setBebidaModalVisible(false)}
-            />
-          </>
-        ) : (
-          <View style={styles.directInputContainer}>
-            <TextInput
-              style={styles.directInput}
-              value={directInputValue}
-              onChangeText={handleBebidaDirectInputChange}
-              keyboardType="numeric"
-              placeholder="0"
-              placeholderTextColor="#ccc"
-            />
-            <View style={styles.unitToggleRow}>
-              <TouchableOpacity
-                style={[
-                  styles.unitToggle,
-                  directUnit === "mL" && styles.unitToggleActive,
-                ]}
-                onPress={() => handleBebidaDirectUnitToggle("mL")}
-              >
-                <Text
-                  style={[
-                    styles.unitToggleText,
-                    directUnit === "mL" && styles.unitToggleTextActive,
-                  ]}
-                >
-                  mL
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.unitToggle,
-                  directUnit === "L" && styles.unitToggleActive,
-                ]}
-                onPress={() => handleBebidaDirectUnitToggle("L")}
-              >
-                <Text
-                  style={[
-                    styles.unitToggleText,
-                    directUnit === "L" && styles.unitToggleTextActive,
-                  ]}
-                >
-                  L
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-      </View>
-    ),
-    bottomContent: (
-      <TouchableOpacity
-        style={styles.confirmBtn}
-        onPress={goForward}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.confirmBtnText}>Confirmar →</Text>
-      </TouchableOpacity>
-    ),
-  };
-
-
   const stepLevelPeople: Step = {
     question: "¿Cómo se piensan hacer las piscolas?",
     content: (
@@ -1113,10 +887,7 @@ export default function CalculatorScreen() {
               availableSizes={PISCO_BOTTLE_SIZES}
               onEntryCountChange={setPiscoExtraEntryCount}
               onEntrySizeChange={setPiscoExtraEntrySize}
-              onAdd={() => {}}
               onRemove={removePiscoExtraEntry}
-              maxEntries={5}
-              addLabel=""
               locked={piscoLocked}
               allowEmpty={true}
               showPercentage={true}
@@ -1134,10 +905,7 @@ export default function CalculatorScreen() {
               availableSizes={SODA_BOTTLE_SIZES}
               onEntryCountChange={setBebidaExtraEntryCount}
               onEntrySizeChange={setBebidaExtraEntrySize}
-              onAdd={() => {}}
               onRemove={removeBebidaExtraEntry}
-              maxEntries={5}
-              addLabel={""}
               locked={bebidaBottleLocked}
               allowEmpty={true}
               showPercentage={true}

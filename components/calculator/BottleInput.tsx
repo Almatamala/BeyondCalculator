@@ -20,14 +20,10 @@ interface Props {
   availableSizes: number[];
   onEntryCountChange: (id: string, count: number) => void;
   onEntrySizeChange: (id: string, sizeMl: number) => void;
-  onAdd: () => void;
-  onRemove: (id: string) => void;
-  maxEntries: number;
-  addLabel: string;
+  onRemove: (id: string) => void; 
   locked: boolean;
   allowEmpty?: boolean;
   emptyMessage?: string;
-  emptyAddLabel?: string;
   showPercentage?: boolean;
   onPercentagePress?: (id: string) => void;
   /** Each card = 1 bottle (no CountPicker, no size locking, duplicates OK) */
@@ -43,14 +39,10 @@ export default function BottleInput({
   availableSizes,
   onEntryCountChange,
   onEntrySizeChange,
-  onAdd,
   onRemove,
-  maxEntries,
-  addLabel,
   locked,
   allowEmpty,
   emptyMessage,
-  emptyAddLabel,
   showPercentage,
   onPercentagePress,
   singleBottleMode,
