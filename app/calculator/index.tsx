@@ -14,14 +14,13 @@ import {
   View,
 } from "react-native";
 
-import BottleInput from "@/components/calculator/BottleInput";
 import BottlePercentageModal from "@/components/calculator/BottlePercentageModal";
 import GlassSelector from "@/components/calculator/GlassSelector";
 import InfoModal from "@/components/calculator/InfoModal";
 import LevelPicker from "@/components/calculator/LevelPicker";
 import ModeSelector from "@/components/calculator/ModeSelector";
 import PersonList from "@/components/calculator/PersonList";
-import PromoInput, { DividerTitle } from "@/components/calculator/PromoInput";
+import PromoInput from "@/components/calculator/PromoInput";
 import ResultCard from "@/components/calculator/ResultCard";
 import ReverseResultCard from "@/components/calculator/ReverseResultCard";
 import UseCaseSelector from "@/components/calculator/UseCaseSelector";
@@ -37,11 +36,7 @@ import {
   SODA_BOTTLE_SIZES,
 } from "@/constants/drinks";
 import { useCalculator } from "@/context/CalculatorContext";
-import {
-  GlassType,
-  Mode,
-  UseCase
-} from "@/types/calculator";
+import { GlassType, Mode, UseCase } from "@/types/calculator";
 import {
   calculateResults,
   calculateReverseResults,
@@ -79,19 +74,12 @@ export default function CalculatorScreen() {
     addBebidaEntry,
     removeBebidaEntry,
     setBebidaDirectMl,
-    // Extra entries for stepBotellasIncompletas
-    setPiscoExtraEntryCount,
-    setPiscoExtraEntrySize,
-    addPiscoExtraEntry,
-    removePiscoExtraEntry,
-    setBebidaExtraEntryCount,
-    setBebidaExtraEntrySize,
-    addBebidaExtraEntry,
-    removeBebidaExtraEntry,
     setReverseLevel,
     setReversePeopleCount,
     setReverseGlassType,
     setBottlePercentage,
+    splitPiscoEntry,
+    splitBebidaEntry,
     reset,
   } = useCalculator();
 
@@ -114,6 +102,7 @@ export default function CalculatorScreen() {
     type: "pisco" | "bebida";
     id: string;
     current: number;
+    count: number;
   } | null>(null);
 
   const results = calculateResults(state);
@@ -125,7 +114,11 @@ export default function CalculatorScreen() {
       : state.peopleCount * state.drinksPerPerson;
 
   const normalPiscoMlPerDrink = state.glassType
-    ? drinkVolumes(state.glassType, GLASS_CONFIG[state.glassType].ml, LEVEL_RATIOS["normal"]).piscoMl
+    ? drinkVolumes(
+        state.glassType,
+        GLASS_CONFIG[state.glassType].ml,
+        LEVEL_RATIOS["normal"],
+      ).piscoMl
     : 0;
 
   /* ── Shortage notification (forward only) ── */
@@ -292,8 +285,6 @@ export default function CalculatorScreen() {
   const [notifVisible, setNotifVisible] = useState(false);
   const [displayMsg, setDisplayMsg] = useState("");
 
-  
-
   const dismiss = useCallback(() => {
     if (notifTimeout.current) clearTimeout(notifTimeout.current);
     Animated.parallel([
@@ -387,9 +378,9 @@ export default function CalculatorScreen() {
     const sodaSize =
       sodaBottleMl >= 1000 ? `${sodaBottleMl / 1000}L` : `${sodaBottleMl}mL`;
 
-    const piscoEmojis = "🍾"
-    const sodaEmojis = "🥤"
-    const iceEmojis = "🧊"
+    const piscoEmojis = "🍾";
+    const sodaEmojis = "🥤";
+    const iceEmojis = "🧊";
 
     const piscoLabel = piscoCount === 1 ? "Pisco" : "Piscos";
     const sodaLabel = sodaCount === 1 ? "Bebida" : "Bebidas";
@@ -618,20 +609,29 @@ export default function CalculatorScreen() {
       type,
       id,
       current: entry?.percentageFull ?? 100,
+      count: entry?.count ?? 1,
     });
     setPercentageModalVisible(true);
   };
 
-  const handlePercentageSelect = (percentage: number) => {
+  const handlePercentageSelectAll = (percentage: number) => {
     if (percentageModalTarget) {
       setBottlePercentage(
         percentageModalTarget.type,
         percentageModalTarget.id,
         percentage,
       );
-      setPercentageModalTarget((prev) =>
-        prev ? { ...prev, current: percentage } : null,
-      );
+    }
+    setPercentageModalVisible(false);
+  };
+
+  const handlePercentageSelectOne = (percentage: number) => {
+    if (percentageModalTarget) {
+      if (percentageModalTarget.type === "pisco") {
+        splitPiscoEntry(percentageModalTarget.id, percentage);
+      } else {
+        splitBebidaEntry(percentageModalTarget.id, percentage);
+      }
     }
     setPercentageModalVisible(false);
   };
@@ -686,27 +686,20 @@ export default function CalculatorScreen() {
             onPromoPiscoSizeChange={setPromoEntryPiscoSize}
             onPromoBebidaSizeChange={setPromoEntryBebidaSize}
             onPromoCountChange={setPromoEntryCount}
-            onAddPisco={() => {
-              const available = PISCO_BOTTLE_SIZES.filter(
-                (s) => !rev.piscoEntries.map((e) => e.sizeMl).includes(s)
-              );
-              if (available.length > 0) addPiscoEntry(available[0]);
-            }}
+            onAddPisco={() => addPiscoEntry(1000)}
             onRemovePisco={removePiscoEntry}
             onPiscoEntryCountChange={setPiscoEntryCount}
             onPiscoEntrySizeChange={setPiscoEntrySize}
-            onAddBebida={() => {
-              const available = SODA_BOTTLE_SIZES.filter(
-                (s) => !rev.bebidaEntries.map((e) => e.sizeMl).includes(s)
-              );
-              if (available.length > 0) addBebidaEntry(available[0]);
-            }}
+            onAddBebida={() => addBebidaEntry(1500)}
             onRemoveBebida={removeBebidaEntry}
             onBebidaEntryCountChange={setBebidaEntryCount}
             onBebidaEntrySizeChange={setBebidaEntrySize}
             piscoLocked={piscoLocked}
             bebidaLocked={bebidaBottleLocked}
-
+            onPiscoPercentagePress={(id) => handlePercentagePress("pisco", id)}
+            onBebidaPercentagePress={(id) =>
+              handlePercentagePress("bebida", id)
+            }
           />
         ) : (
           <View style={styles.directInputContainer}>
@@ -874,105 +867,9 @@ export default function CalculatorScreen() {
     ),
   };
 
-  // Nuevo step fusionado que combina pisco y bebida para el modo promos
-  const stepBotellasIncompletas: Step = {
-    question: "¿Tienen botellas sueltas adicionales?",
-    content: (
-      <View style={styles.slideContent}>
-        {rev.piscoExtraEntries.length > 0 && (
-          <View style={styles.section}>
-            <DividerTitle label="Pisco suelto" />
-            <BottleInput
-              entries={rev.piscoExtraEntries}
-              availableSizes={PISCO_BOTTLE_SIZES}
-              onEntryCountChange={setPiscoExtraEntryCount}
-              onEntrySizeChange={setPiscoExtraEntrySize}
-              onRemove={removePiscoExtraEntry}
-              locked={piscoLocked}
-              allowEmpty={true}
-              showPercentage={true}
-              onPercentagePress={(id) => handlePercentagePress("pisco", id)}
-              singleBottleMode={true}
-            />
-          </View>
-        )}
-        
-        {rev.bebidaExtraEntries.length > 0 && (
-          <View style={styles.section}>
-            <DividerTitle label="Bebida suelta" />
-            <BottleInput
-              entries={rev.bebidaExtraEntries}
-              availableSizes={SODA_BOTTLE_SIZES}
-              onEntryCountChange={setBebidaExtraEntryCount}
-              onEntrySizeChange={setBebidaExtraEntrySize}
-              onRemove={removeBebidaExtraEntry}
-              locked={bebidaBottleLocked}
-              allowEmpty={true}
-              showPercentage={true}
-              onPercentagePress={(id) => handlePercentagePress("bebida", id)}
-              singleBottleMode={true}
-            />
-          </View>
-        )}
-        
-        {/* Mensajes vacíos y botones de agregar */}
-        {(rev.piscoExtraEntries.length === 0 && rev.bebidaExtraEntries.length === 0) && (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>Sin pisco ni bebida extra — puedes continuar o agregar botellas</Text>
-          </View>
-        )}
-        
-        <View style={styles.addButtonsRow}>
-          <TouchableOpacity
-            style={[styles.addBtnSmall, rev.piscoExtraEntries.length >= PISCO_BOTTLE_SIZES.length && styles.addBtnDisabled]}
-            onPress={() => addPiscoExtraEntry(1000)}
-            activeOpacity={0.7}
-            disabled={rev.piscoExtraEntries.length >= PISCO_BOTTLE_SIZES.length}
-          >
-            <Text 
-              style={[
-                styles.addBtnSmallText,
-                rev.piscoExtraEntries.length >= PISCO_BOTTLE_SIZES.length && styles.addBtnDisabledText,
-              ]}
-            >+ Pisco suelto</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.addBtnSmall, rev.bebidaExtraEntries.length >= SODA_BOTTLE_SIZES.length && styles.addBtnDisabled]}
-            onPress={() => addBebidaExtraEntry(1500)}
-            activeOpacity={0.7}
-            disabled={rev.bebidaExtraEntries.length >= SODA_BOTTLE_SIZES.length}
-          >
-            <Text 
-              style={[
-                styles.addBtnSmallText,
-                rev.bebidaExtraEntries.length >= SODA_BOTTLE_SIZES.length && styles.addBtnDisabledText,
-              ]}
-            >+ Bebida suelta</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    ),
-    bottomContent: (
-      <TouchableOpacity
-        style={styles.confirmBtn}
-        onPress={goForward}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.confirmBtnText}>Confirmar →</Text>
-      </TouchableOpacity>
-    ),
-  };
-
   // Build reverse steps dynamically based on chosen path
   const buildReverseSteps = (): Step[] => {
     const steps: Step[] = [stepPromoInput];
-    
-    // Siempre agregar el selector de promo extra
-    if (rev.promoInputMode === "bottles") {
-      steps.push(stepBotellasIncompletas);
-    }
-        
-    // Steps finales comunes
     steps.push(stepLevelPeople, stepGlass, stepResult);
     return steps;
   };
@@ -989,7 +886,9 @@ export default function CalculatorScreen() {
       <BottlePercentageModal
         visible={percentageModalVisible}
         currentPercentage={percentageModalTarget?.current ?? 100}
-        onSelect={handlePercentageSelect}
+        showSplit={(percentageModalTarget?.count ?? 1) > 1}
+        onSelectAll={handlePercentageSelectAll}
+        onSelectOne={handlePercentageSelectOne}
         onClose={() => setPercentageModalVisible(false)}
       />
       <StepContainer
@@ -1127,7 +1026,7 @@ const styles = StyleSheet.create({
     color: "#b36b00",
     fontWeight: "500",
   },
-  
+
   // Reverse-specific styles
   modeToggleRow: {
     flexDirection: "row",
