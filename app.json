@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Calculadora de piscolas",
+    "name": "PiscolApp",
     "slug": "BeyondCalculator",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -27,7 +27,18 @@
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png",
-      "bundler": "metro"
+      "bundler": "metro",
+      "name": "PiscolApp",
+      "shortName": "Piscolas",
+      "description": "PiscolApp",
+      "themeColor": "#E6F4FE",
+      "backgroundColor": "#E6F4FE",
+      "meta": {
+        "viewport": "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
+        "apple-mobile-web-app-capable": "yes",
+        "apple-mobile-web-app-status-bar-style": "default",
+        "apple-mobile-web-app-title": "Piscolas"
+      }
     },
     "plugins": [
       "expo-router",

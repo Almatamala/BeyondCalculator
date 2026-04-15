@@ -15,9 +15,9 @@ import {
   useWindowDimensions,
 } from "react-native";
 import Animated, {
+  Easing,
   SlideInLeft,
   SlideInRight,
-  Easing,
   cancelAnimation,
   useAnimatedStyle,
   useSharedValue,
@@ -154,7 +154,7 @@ const StepContainer = forwardRef<StepContainerRef, Props>(
           style={[
             styles.top,
             { paddingTop: step.expandCard ? insets.top + 56 : insets.top + 24 },
-            step.expandCard && styles.topCompact,
+            step.expandCard && [styles.topCompact, { minHeight: insets.top + 200 }],
           ]}
         >
           <Animated.Text
@@ -250,7 +250,6 @@ const styles = StyleSheet.create({
   topCompact: {
     flex: 0,
     justifyContent: "flex-start",
-    paddingBottom: 20,
   },
   question: {
     fontSize: 34,
