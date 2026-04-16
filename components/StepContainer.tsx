@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import {
   ImageBackground,
+  Platform,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -120,7 +121,17 @@ const StepContainer = forwardRef<StepContainerRef, Props>(
         : SlideInLeft.duration(ANIM_DURATION);
 
     return (
-      <ImageBackground source={BG_IMAGE} style={styles.bg} resizeMode="cover">
+      <ImageBackground 
+        source={BG_IMAGE} 
+        style={styles.bg} 
+        resizeMode="cover"
+        imageStyle={Platform.select({
+          web: {
+            width: '100%',
+            height: '100%',
+          },
+        })}
+      >
         <View style={styles.overlay} />
 
         {/* Back button — absolute, top-left of the whole screen */}
@@ -235,6 +246,17 @@ export default StepContainer;
 const styles = StyleSheet.create({
   bg: {
     flex: 1,
+    width: '100%',
+    height: '100%',
+    ...Platform.select({
+      web: {
+        position: 'fixed' as const,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+      },
+    }),
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
