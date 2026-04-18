@@ -1,9 +1,5 @@
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
-import { Slot } from "expo-router";
+import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import { Stack } from "expo-router"; // <- cambiar Slot por Stack
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import "react-native-reanimated";
@@ -20,7 +16,7 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <CalculatorProvider>
-        <Slot />
+        <Stack screenOptions={{ headerShown: false, contentStyle: { flex: 1 }  }} />
         <StatusBar style="auto" />
         {!accepted && <DisclaimerGate onAccept={() => setAccepted(true)} />}
       </CalculatorProvider>

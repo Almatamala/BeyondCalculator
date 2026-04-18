@@ -1,5 +1,1158 @@
-import { Redirect } from "expo-router";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Alert,
+  Animated,
+  BackHandler,
+  PanResponder,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+import BottlePercentageModal from "@/components/calculator/BottlePercentageModal";
+import GlassSelector from "@/components/calculator/GlassSelector";
+import InfoModal from "@/components/calculator/InfoModal";
+import LevelPicker from "@/components/calculator/LevelPicker";
+import ModeSelector from "@/components/calculator/ModeSelector";
+import PersonList from "@/components/calculator/PersonList";
+import PromoInput from "@/components/calculator/PromoInput";
+import ResultCard from "@/components/calculator/ResultCard";
+import ReverseResultCard from "@/components/calculator/ReverseResultCard";
+import UseCaseSelector from "@/components/calculator/UseCaseSelector";
+import CountPicker from "@/components/countPicker";
+import StepContainer, {
+  Step,
+  StepContainerRef,
+} from "@/components/StepContainer";
+import {
+  GLASS_CONFIG,
+  LEVEL_RATIOS,
+  PISCO_BOTTLE_SIZES,
+  SODA_BOTTLE_SIZES,
+} from "@/constants/drinks";
+import { useCalculator } from "@/context/CalculatorContext";
+import { GlassType, Mode, UseCase } from "@/types/calculator";
+import {
+  calculateResults,
+  calculateReverseResults,
+  drinkVolumes,
+} from "@/utils/calculations";
 
 export default function Index() {
-  return <Redirect href="/calculator" />;
+  const {
+    state,
+    setUseCase,
+    setMode,
+    addPerson,
+    removePerson,
+    setPersonName,
+    setPersonLevel,
+    setPersonDrinks,
+    setPeopleCount,
+    setDrinksPerPerson,
+    setLevel,
+    setGlassType,
+    // reverse actions
+    setPromoInputMode,
+    addPromoEntry,
+    removePromoEntry,
+    setPromoEntryPiscoSize,
+    setPromoEntryBebidaSize,
+    setPromoEntryCount,
+    setPiscoEntryCount,
+    setPiscoEntrySize,
+    addPiscoEntry,
+    removePiscoEntry,
+    setPiscoDirectMl,
+    setBebidaEntryCount,
+    setBebidaEntrySize,
+    addBebidaEntry,
+    removeBebidaEntry,
+    setBebidaDirectMl,
+    setReverseLevel,
+    setReversePeopleCount,
+    setReverseGlassType,
+    setBottlePercentage,
+    splitPiscoEntry,
+    splitBebidaEntry,
+    reset,
+  } = useCalculator();
+
+  const containerRef = useRef<StepContainerRef>(null);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [direction, setDirection] = useState<"forward" | "backward">("forward");
+  const [infoVisible, setInfoVisible] = useState(false);
+
+  const [piscoBottleMl, setPiscoBottleMl] = useState(1000);
+  const [sodaBottleMl, setSodaBottleMl] = useState(3000);
+
+  const [piscoDirectUnit, setPiscoDirectUnit] = useState<"mL" | "L">("L");
+  const [piscoDirectInputValue, setPiscoDirectInputValue] = useState("");
+
+  const [directUnit, setDirectUnit] = useState<"mL" | "L">("L");
+  const [directInputValue, setDirectInputValue] = useState("");
+
+  const [percentageModalVisible, setPercentageModalVisible] = useState(false);
+  const [percentageModalTarget, setPercentageModalTarget] = useState<{
+    type: "pisco" | "bebida";
+    id: string;
+    current: number;
+    count: number;
+  } | null>(null);
+
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    setReady(true);
+  }, []);
+
+  if (!ready) return null;
+
+  const results = calculateResults(state);
+  const reverseResults = calculateReverseResults(state.reverse);
+
+  const totalDrinks =
+    state.mode === "personalized"
+      ? state.people.reduce((sum, p) => sum + p.drinksPerPerson, 0)
+      : state.peopleCount * state.drinksPerPerson;
+
+  const normalPiscoMlPerDrink = state.glassType
+    ? drinkVolumes(
+        state.glassType,
+        GLASS_CONFIG[state.glassType].ml,
+        LEVEL_RATIOS["normal"],
+      ).piscoMl
+    : 0;
+
+  /* ── Shortage notification (forward only) ── */
+
+  function shortfallInfo(
+    valueMl: number,
+    bottleMl: number,
+    mlPerDrink: number,
+  ) {
+    if (valueMl <= 0 || mlPerDrink <= 0) return { isShort: false, n: 0 };
+    const rounded = Math.round(valueMl);
+    const rawRatio = rounded / bottleMl;
+    const frac = rawRatio - Math.floor(rawRatio);
+    if (frac <= 0 || frac > 0.25) return { isShort: false, n: 0 };
+    const shortfallMl = rounded - Math.floor(rawRatio) * bottleMl;
+    return { isShort: true, n: Math.ceil(shortfallMl / mlPerDrink) };
+  }
+
+  const bebidaMlPerDrink = totalDrinks > 0 ? results.bebidaMl / totalDrinks : 0;
+  const piscoShort = shortfallInfo(
+    results.liquorMl,
+    piscoBottleMl,
+    normalPiscoMlPerDrink,
+  );
+  const bebidaShort = shortfallInfo(
+    results.bebidaMl,
+    sodaBottleMl,
+    bebidaMlPerDrink,
+  );
+  const iceShort = shortfallInfo(results.iceMl, 1090, 120);
+
+  function buildShortageMsg(
+    pisco: boolean,
+    bebida: boolean,
+    ice: boolean,
+    _n: number,
+  ): string {
+    const items = (
+      [pisco && "pisco", bebida && "bebida", ice && "hielo"] as (
+        | string
+        | false
+      )[]
+    ).filter(Boolean) as string[];
+    if (items.length === 0) return "";
+    const list =
+      items.length === 1
+        ? items[0]
+        : items.slice(0, -1).join(", ") + " y " + items[items.length - 1];
+    return `Les va a faltar un poco de ${list}. Ahi ven ustedes si compran mas.`;
+  }
+
+  const anyShort =
+    piscoShort.isShort || bebidaShort.isShort || iceShort.isShort;
+  const maxN = Math.max(piscoShort.n, bebidaShort.n, iceShort.n);
+  const shortageMsg = anyShort
+    ? buildShortageMsg(
+        piscoShort.isShort,
+        bebidaShort.isShort,
+        iceShort.isShort,
+        maxN,
+      )
+    : "";
+
+  // The forward result step index depends on useCase
+  const forwardResultStep = state.useCase === "forward" ? 4 : -1;
+
+  /* ── Navigation ── */
+
+  const goForward = () => {
+    setDirection("forward");
+    setCurrentStep((s) => s + 1);
+  };
+
+  const goBack = useCallback(() => {
+    if (currentStep === 0) return;
+
+    // Step 1 → Step 0: always warn if data entered, then reset
+    if (currentStep === 1) {
+      if (state.useCase === "forward") {
+        const hasDataEntered = () => {
+          if (state.mode === "personalized") return state.people.length > 0;
+          return (
+            state.peopleCount !== 1 ||
+            state.drinksPerPerson !== 3 ||
+            state.level !== "normal"
+          );
+        };
+        if (hasDataEntered()) {
+          Alert.alert(
+            "¿Estás seguro?",
+            "Se perderán los datos ingresados en este paso.",
+            [
+              { text: "Cancelar", style: "cancel" },
+              {
+                text: "Sí, volver",
+                style: "destructive",
+                onPress: () => {
+                  reset();
+                  setDirection("backward");
+                  setCurrentStep(0);
+                },
+              },
+            ],
+          );
+          return;
+        }
+      }
+      // For reverse or forward with no data, just go back
+      reset();
+      setDirection("backward");
+      setCurrentStep(0);
+      return;
+    }
+
+    setDirection("backward");
+    setCurrentStep((s) => s - 1);
+  }, [
+    currentStep,
+    state.useCase,
+    state.mode,
+    state.people,
+    state.peopleCount,
+    state.drinksPerPerson,
+    state.level,
+    reset,
+  ]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBack = () => {
+        if (currentStep > 0) {
+          goBack();
+          return true;
+        }
+        return false;
+      };
+      const sub = BackHandler.addEventListener("hardwareBackPress", onBack);
+      return () => sub.remove();
+    }, [currentStep, goBack]),
+  );
+
+  const handleReset = () => {
+    reset();
+    setPiscoBottleMl(1000);
+    setSodaBottleMl(3000);
+    setCopied(false);
+    setDirectUnit("L");
+    setDirectInputValue("");
+    setPiscoDirectUnit("L");
+    setPiscoDirectInputValue("");
+    setDirection("backward");
+    setCurrentStep(0);
+  };
+
+  const [copied, setCopied] = useState(false);
+
+  const notifOpacity = useRef(new Animated.Value(0)).current;
+  const notifTranslateX = useRef(new Animated.Value(0)).current;
+  const notifTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const notifTranslateY = notifOpacity.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-16, 0],
+  });
+  const [notifVisible, setNotifVisible] = useState(false);
+  const [displayMsg, setDisplayMsg] = useState("");
+
+  const dismiss = useCallback(() => {
+    if (notifTimeout.current) clearTimeout(notifTimeout.current);
+    Animated.parallel([
+      Animated.timing(notifOpacity, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(notifTranslateX, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start(() => setNotifVisible(false));
+  }, [notifOpacity, notifTranslateX]);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gs) =>
+        Math.abs(gs.dx) > 8 && Math.abs(gs.dx) > Math.abs(gs.dy),
+      onPanResponderMove: (_, gs) => notifTranslateX.setValue(gs.dx),
+      onPanResponderRelease: (_, gs) => {
+        if (Math.abs(gs.dx) > 80) {
+          if (notifTimeout.current) clearTimeout(notifTimeout.current);
+          Animated.parallel([
+            Animated.timing(notifTranslateX, {
+              toValue: gs.dx > 0 ? 500 : -500,
+              duration: 220,
+              useNativeDriver: true,
+            }),
+            Animated.timing(notifOpacity, {
+              toValue: 0,
+              duration: 220,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            notifTranslateX.setValue(0);
+            setNotifVisible(false);
+          });
+        } else {
+          Animated.spring(notifTranslateX, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    }),
+  ).current;
+
+  const showInfo = useCallback(() => {
+    setInfoVisible(true);
+  }, []);
+
+  useEffect(() => {
+    if (currentStep !== forwardResultStep || !anyShort) {
+      dismiss();
+      return;
+    }
+    if (shortageMsg) setDisplayMsg(shortageMsg);
+    if (notifTimeout.current) clearTimeout(notifTimeout.current);
+    notifTranslateX.setValue(0);
+    notifOpacity.setValue(0);
+    setNotifVisible(true);
+    Animated.timing(notifOpacity, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+    notifTimeout.current = setTimeout(dismiss, 5000);
+    return () => {
+      if (notifTimeout.current) clearTimeout(notifTimeout.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, anyShort, shortageMsg, forwardResultStep]);
+
+  const handleCopy = async () => {
+    const smartCount = (ml: number, bottleMl: number) => {
+      const raw = Math.round(ml) / bottleMl;
+      const frac = raw - Math.floor(raw);
+      return Math.max(
+        1,
+        frac > 0 && frac <= 0.25 ? Math.floor(raw) : Math.ceil(raw),
+      );
+    };
+    const piscoCount = smartCount(results.liquorMl, piscoBottleMl);
+    const sodaCount = smartCount(results.bebidaMl, sodaBottleMl);
+    const iceKg = Math.ceil(results.iceMl / 1090);
+
+    const piscoSize =
+      piscoBottleMl >= 1000 ? `${piscoBottleMl / 1000}L` : `${piscoBottleMl}mL`;
+    const sodaSize =
+      sodaBottleMl >= 1000 ? `${sodaBottleMl / 1000}L` : `${sodaBottleMl}mL`;
+
+    const piscoEmojis = "🍾";
+    const sodaEmojis = "🥤";
+    const iceEmojis = "🧊";
+
+    const piscoLabel = piscoCount === 1 ? "Pisco" : "Piscos";
+    const sodaLabel = sodaCount === 1 ? "Bebida" : "Bebidas";
+
+    const message = [
+      `${piscoEmojis} ${piscoCount} ${piscoLabel} de ${piscoSize}`,
+      `${sodaEmojis} ${sodaCount} ${sodaLabel} de ${sodaSize}`,
+      `${iceEmojis} ${iceKg}kg de hielo`,
+    ].join("\n");
+
+    await Clipboard.setStringAsync(message);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  /* ── Auto-advance handlers ── */
+
+  const handleUseCaseSelect = (uc: UseCase) => {
+    setUseCase(uc);
+    setTimeout(goForward, 100);
+  };
+
+  const handleModeSelect = (mode: Mode) => {
+    setMode(mode);
+    setTimeout(goForward, 100);
+  };
+
+  const handleGlassSelect = (glass: GlassType) => {
+    setGlassType(glass);
+    setTimeout(goForward, 100);
+  };
+
+  const handleReverseGlassSelect = (glass: GlassType) => {
+    setReverseGlassType(glass);
+    setTimeout(goForward, 100);
+  };
+
+  const handleAddPerson = () => {
+    addPerson();
+    setTimeout(() => containerRef.current?.scrollContentToEnd(), 50);
+  };
+
+  /* ── Direct bebida input ── */
+  const handleBebidaDirectInputChange = (text: string) => {
+    setDirectInputValue(text);
+    const num = parseFloat(text);
+    if (!isNaN(num) && num >= 0) {
+      setBebidaDirectMl(directUnit === "L" ? num * 1000 : num);
+    } else if (text === "") {
+      setBebidaDirectMl(0);
+    }
+  };
+
+  const handleBebidaDirectUnitToggle = (unit: "mL" | "L") => {
+    setDirectUnit(unit);
+    const num = parseFloat(directInputValue);
+    if (!isNaN(num) && num >= 0) {
+      setBebidaDirectMl(unit === "L" ? num * 1000 : num);
+    }
+  };
+
+  const handlePiscoDirectInputChange = (text: string) => {
+    setPiscoDirectInputValue(text);
+    const num = parseFloat(text);
+    if (!isNaN(num) && num >= 0) {
+      setPiscoDirectMl(piscoDirectUnit === "L" ? num * 1000 : num);
+    } else if (text === "") {
+      setPiscoDirectMl(0);
+    }
+  };
+
+  const handlePiscoDirectUnitToggle = (unit: "mL" | "L") => {
+    setPiscoDirectUnit(unit);
+    const num = parseFloat(piscoDirectInputValue);
+    if (!isNaN(num) && num >= 0) {
+      setPiscoDirectMl(unit === "L" ? num * 1000 : num);
+    }
+  };
+
+  /* ── Steps ── */
+
+  // Step 0: Use-case selector (shared)
+  const step0: Step = {
+    question: "¿Qué necesitas calcular?",
+    content: (
+      <UseCaseSelector value={state.useCase} onSelect={handleUseCaseSelect} />
+    ),
+    scrollable: false,
+  };
+
+  // Forward steps (same as before, indices 1-4)
+  const forwardSteps: Step[] = [
+    {
+      question: "¿Tomarán todos lo mismo?",
+      content: <ModeSelector value={state.mode} onSelect={handleModeSelect} />,
+      scrollable: false,
+    },
+    {
+      question: "¿Cuánto tomarán?",
+      content: (
+        <View style={styles.slideContent}>
+          {state.mode === "personalized" ? (
+            <PersonList
+              people={state.people}
+              onAdd={handleAddPerson}
+              onRemove={removePerson}
+              onNameChange={setPersonName}
+              onLevelChange={setPersonLevel}
+              onDrinksChange={setPersonDrinks}
+            />
+          ) : (
+            <View style={styles.sameMode}>
+              <View style={styles.counterGroup}>
+                <Text style={styles.counterLabel}>¿Cuántos weones son?</Text>
+                <CountPicker
+                  value={state.peopleCount}
+                  onChange={setPeopleCount}
+                />
+              </View>
+              <View style={styles.counterGroup}>
+                <Text style={styles.counterLabel}>
+                  ¿Cuántos vasos tomará cada weon/a?
+                </Text>
+                <CountPicker
+                  value={state.drinksPerPerson}
+                  onChange={setDrinksPerPerson}
+                />
+              </View>
+              <View style={styles.counterGroup}>
+                <Text style={styles.counterLabel}>¿Cómo van a tomar?</Text>
+                <LevelPicker
+                  value={state.level}
+                  onChange={setLevel}
+                  centered
+                  style={{ width: 150, height: 60 }}
+                />
+              </View>
+              <Text style={styles.hint}>
+                Toca el número para escribir directamente
+              </Text>
+            </View>
+          )}
+        </View>
+      ),
+      bottomContent: (
+        <TouchableOpacity
+          style={styles.confirmBtn}
+          onPress={goForward}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.confirmBtnText}>Confirmar →</Text>
+        </TouchableOpacity>
+      ),
+    },
+    {
+      question: "¿Qué vaso están usando?",
+      content: (
+        <GlassSelector value={state.glassType} onChange={handleGlassSelect} />
+      ),
+      fitContent: true,
+    },
+    {
+      question: "Esto es lo que necesitan",
+      fitContent: true,
+      contentStyle: { gap: 8, padding: 12 },
+      content: (
+        <View style={[styles.slideContent, { gap: 10 }]}>
+          <ResultCard
+            label="Pisco"
+            valueMl={results.liquorMl}
+            bottleSizes={PISCO_BOTTLE_SIZES}
+            selectedBottleMl={piscoBottleMl}
+            onBottleSizeChange={setPiscoBottleMl}
+          />
+          <ResultCard
+            label="Bebida"
+            valueMl={results.bebidaMl}
+            bottleSizes={SODA_BOTTLE_SIZES}
+            selectedBottleMl={sodaBottleMl}
+            onBottleSizeChange={setSodaBottleMl}
+          />
+          <ResultCard
+            label="Hielo"
+            valueMl={results.iceMl}
+            bottleSizes={[1090]}
+            selectedBottleMl={1090}
+            onBottleSizeChange={() => {}}
+            unit={{ singular: "bolsa de 1 kg", plural: "bolsas de 1 kg" }}
+            totalLabel={`${(results.iceMl / 1090).toFixed(1)} kg`}
+          />
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={styles.resetBtn} onPress={handleReset}>
+              <Text style={styles.resetBtnText}>Empezar de nuevo</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.copyBtn}
+              onPress={handleCopy}
+              activeOpacity={0.8}
+            >
+              <MaterialCommunityIcons
+                name={copied ? "check" : "clipboard-text-outline"}
+                size={18}
+                color={copied ? "#4CAF50" : "#666"}
+              />
+              <Text
+                style={[styles.copyBtnText, copied && styles.copyBtnTextDone]}
+              >
+                {copied ? "Copiado" : "Copiar"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ),
+    },
+  ];
+
+  // Reverse steps — built dynamically based on chosen path
+  const rev = state.reverse;
+  const piscoLocked = rev.piscoEntries.length > 1;
+  const bebidaBottleLocked = rev.bebidaEntries.length > 1;
+
+  const handlePercentagePress = (type: "pisco" | "bebida", id: string) => {
+    const entries = type === "pisco" ? rev.piscoEntries : rev.bebidaEntries;
+    const entry = entries.find((e) => e.id === id);
+    setPercentageModalTarget({
+      type,
+      id,
+      current: entry?.percentageFull ?? 100,
+      count: entry?.count ?? 1,
+    });
+    setPercentageModalVisible(true);
+  };
+
+  const handlePercentageSelectAll = (percentage: number) => {
+    if (percentageModalTarget) {
+      setBottlePercentage(
+        percentageModalTarget.type,
+        percentageModalTarget.id,
+        percentage,
+      );
+    }
+    setPercentageModalVisible(false);
+  };
+
+  const handlePercentageSelectOne = (percentage: number) => {
+    if (percentageModalTarget) {
+      if (percentageModalTarget.type === "pisco") {
+        splitPiscoEntry(percentageModalTarget.id, percentage);
+      } else {
+        splitBebidaEntry(percentageModalTarget.id, percentage);
+      }
+    }
+    setPercentageModalVisible(false);
+  };
+
+  const stepPromoInput: Step = {
+    question: "Ingresa tus promos, piscos y bebidas",
+    expandCard: true,
+    content: (
+      <View style={styles.slideContent}>
+        <View style={styles.modeToggleRow}>
+          <TouchableOpacity
+            style={[
+              styles.modeToggle,
+              rev.promoInputMode === "bottles" && styles.modeToggleActive,
+            ]}
+            onPress={() => setPromoInputMode("bottles")}
+          >
+            <Text
+              style={[
+                styles.modeToggleText,
+                rev.promoInputMode === "bottles" && styles.modeToggleTextActive,
+              ]}
+            >
+              Por botellas
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.modeToggle,
+              rev.promoInputMode === "direct" && styles.modeToggleActive,
+            ]}
+            onPress={() => setPromoInputMode("direct")}
+          >
+            <Text
+              style={[
+                styles.modeToggleText,
+                rev.promoInputMode === "direct" && styles.modeToggleTextActive,
+              ]}
+            >
+              Directo en litros
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {rev.promoInputMode === "bottles" ? (
+          <PromoInput
+            promoEntries={rev.promoEntries}
+            piscoEntries={rev.piscoEntries}
+            bebidaEntries={rev.bebidaEntries}
+            onAddPromo={addPromoEntry}
+            onRemovePromo={removePromoEntry}
+            onPromoPiscoSizeChange={setPromoEntryPiscoSize}
+            onPromoBebidaSizeChange={setPromoEntryBebidaSize}
+            onPromoCountChange={setPromoEntryCount}
+            onAddPisco={() => addPiscoEntry(1000)}
+            onRemovePisco={removePiscoEntry}
+            onPiscoEntryCountChange={setPiscoEntryCount}
+            onPiscoEntrySizeChange={setPiscoEntrySize}
+            onAddBebida={() => addBebidaEntry(1500)}
+            onRemoveBebida={removeBebidaEntry}
+            onBebidaEntryCountChange={setBebidaEntryCount}
+            onBebidaEntrySizeChange={setBebidaEntrySize}
+            piscoLocked={piscoLocked}
+            bebidaLocked={bebidaBottleLocked}
+            onPiscoPercentagePress={(id) => handlePercentagePress("pisco", id)}
+            onBebidaPercentagePress={(id) =>
+              handlePercentagePress("bebida", id)
+            }
+          />
+        ) : (
+          <View style={styles.directInputContainer}>
+            <Text>Pisco</Text>
+            <View style={styles.directInputContainer}>
+              <TextInput
+                style={styles.directInput}
+                value={piscoDirectInputValue}
+                onChangeText={handlePiscoDirectInputChange}
+                keyboardType="numeric"
+                placeholder="0"
+                placeholderTextColor="#ccc"
+              />
+              <View style={styles.unitToggleRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.unitToggle,
+                    piscoDirectUnit === "mL" && styles.unitToggleActive,
+                  ]}
+                  onPress={() => handlePiscoDirectUnitToggle("mL")}
+                >
+                  <Text
+                    style={[
+                      styles.unitToggleText,
+                      piscoDirectUnit === "mL" && styles.unitToggleTextActive,
+                    ]}
+                  >
+                    mL
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.unitToggle,
+                    piscoDirectUnit === "L" && styles.unitToggleActive,
+                  ]}
+                  onPress={() => handlePiscoDirectUnitToggle("L")}
+                >
+                  <Text
+                    style={[
+                      styles.unitToggleText,
+                      piscoDirectUnit === "L" && styles.unitToggleTextActive,
+                    ]}
+                  >
+                    L
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            <Text>Bebida</Text>
+            <View style={styles.directInputContainer}>
+              <TextInput
+                style={styles.directInput}
+                value={directInputValue}
+                onChangeText={handleBebidaDirectInputChange}
+                keyboardType="numeric"
+                placeholder="0"
+                placeholderTextColor="#ccc"
+              />
+              <View style={styles.unitToggleRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.unitToggle,
+                    directUnit === "mL" && styles.unitToggleActive,
+                  ]}
+                  onPress={() => handleBebidaDirectUnitToggle("mL")}
+                >
+                  <Text
+                    style={[
+                      styles.unitToggleText,
+                      directUnit === "mL" && styles.unitToggleTextActive,
+                    ]}
+                  >
+                    mL
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.unitToggle,
+                    directUnit === "L" && styles.unitToggleActive,
+                  ]}
+                  onPress={() => handleBebidaDirectUnitToggle("L")}
+                >
+                  <Text
+                    style={[
+                      styles.unitToggleText,
+                      directUnit === "L" && styles.unitToggleTextActive,
+                    ]}
+                  >
+                    L
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
+      </View>
+    ),
+    bottomContent: (
+      <TouchableOpacity
+        style={styles.confirmBtn}
+        onPress={goForward}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.confirmBtnText}>Confirmar →</Text>
+      </TouchableOpacity>
+    ),
+  };
+
+  const stepLevelPeople: Step = {
+    question: "¿Cómo se piensan hacer las piscolas?",
+    content: (
+      <View style={styles.sameMode}>
+        <View style={styles.counterGroup}>
+          <Text style={styles.counterLabel}>¿Cómo van a tomar?</Text>
+          <LevelPicker
+            value={rev.level}
+            onChange={setReverseLevel}
+            centered
+            style={{ width: 150, height: 60 }}
+          />
+        </View>
+        <View style={styles.counterGroup}>
+          <Text style={styles.counterLabel}>¿Cuántos weones son?</Text>
+          <CountPicker
+            value={rev.peopleCount}
+            onChange={setReversePeopleCount}
+          />
+        </View>
+      </View>
+    ),
+    scrollable: false,
+    bottomContent: (
+      <TouchableOpacity
+        style={styles.confirmBtn}
+        onPress={goForward}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.confirmBtnText}>Confirmar →</Text>
+      </TouchableOpacity>
+    ),
+  };
+
+  const stepGlass: Step = {
+    question: "¿Qué vaso están usando?",
+    content: (
+      <GlassSelector
+        value={rev.glassType}
+        onChange={handleReverseGlassSelect}
+      />
+    ),
+    fitContent: true,
+  };
+
+  const stepResult: Step = {
+    question: "Esto es lo que les sale",
+    fitContent: true,
+    contentStyle: { gap: 8, padding: 12 },
+    content: (
+      <ReverseResultCard
+        result={reverseResults}
+        level={rev.level}
+        peopleCount={rev.peopleCount}
+        onReset={handleReset}
+      />
+    ),
+  };
+
+  // Build reverse steps dynamically based on chosen path
+  const buildReverseSteps = (): Step[] => {
+    const steps: Step[] = [stepPromoInput];
+    steps.push(stepLevelPeople, stepGlass, stepResult);
+    return steps;
+  };
+
+  const reverseSteps = buildReverseSteps();
+
+  const steps: Step[] = [
+    step0,
+    ...(state.useCase === "reverse" ? reverseSteps : forwardSteps),
+  ];
+
+  return (
+    <View style={{ flex: 1 }}>
+      <BottlePercentageModal
+        visible={percentageModalVisible}
+        currentPercentage={percentageModalTarget?.current ?? 100}
+        showSplit={(percentageModalTarget?.count ?? 1) > 1}
+        onSelectAll={handlePercentageSelectAll}
+        onSelectOne={handlePercentageSelectOne}
+        onClose={() => setPercentageModalVisible(false)}
+      />
+      <StepContainer
+        ref={containerRef}
+        steps={steps}
+        currentStep={currentStep}
+        direction={direction}
+        onBack={goBack}
+        onInfo={showInfo}
+      />
+      <Animated.View
+        pointerEvents={notifVisible ? "box-only" : "none"}
+        style={[
+          styles.notification,
+          {
+            opacity: notifOpacity,
+            transform: [
+              { translateY: notifTranslateY },
+              { translateX: notifTranslateX },
+            ],
+          },
+        ]}
+        {...panResponder.panHandlers}
+      >
+        <MaterialCommunityIcons
+          name="alert-circle-outline"
+          size={16}
+          color="#F5A623"
+        />
+        <Text style={styles.notificationText}>{displayMsg}</Text>
+      </Animated.View>
+      <InfoModal visible={infoVisible} onClose={() => setInfoVisible(false)} />
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  slideContent: {
+    gap: 20,
+  },
+  sameMode: {
+    gap: 24,
+    alignItems: "center",
+  },
+  counterGroup: {
+    gap: 8,
+    alignItems: "center",
+    width: "100%",
+  },
+  counterLabel: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#374151",
+    textAlign: "center",
+  },
+  hint: {
+    fontSize: 13,
+    color: "#9CA3AF",
+    textAlign: "center",
+  },
+  confirmBtn: {
+    backgroundColor: "#F5A623",
+    borderRadius: 14,
+    paddingVertical: 14,
+    marginHorizontal: 24,
+    marginBottom: 8,
+    alignItems: "center",
+  },
+  confirmBtnText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  actionRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  copyBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderWidth: 1.5,
+    borderColor: "#ddd",
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  copyBtnText: {
+    fontSize: 14,
+    color: "#666",
+    fontWeight: "500",
+  },
+  copyBtnTextDone: {
+    color: "#4CAF50",
+  },
+  resetBtn: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: "#ddd",
+    borderRadius: 14,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  resetBtnText: {
+    fontSize: 15,
+    color: "#666",
+    fontWeight: "500",
+  },
+  notification: {
+    position: "absolute",
+    top: 55,
+    left: 16,
+    right: 16,
+    zIndex: 999,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#fff8ee",
+    borderWidth: 1,
+    borderColor: "#F5A623",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  notificationText: {
+    flex: 1,
+    fontSize: 13,
+    color: "#b36b00",
+    fontWeight: "500",
+  },
+
+  // Reverse-specific styles
+  modeToggleRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  modeToggle: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#ddd",
+    alignItems: "center",
+    backgroundColor: "#fafafa",
+  },
+  modeToggleActive: {
+    borderColor: "#F5A623",
+    backgroundColor: "#F5A623",
+  },
+  modeToggleText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#666",
+  },
+  modeToggleTextActive: {
+    color: "#fff",
+  },
+  directInputContainer: {
+    alignItems: "center",
+    gap: 12,
+  },
+  directInput: {
+    fontSize: 32,
+    fontWeight: "700",
+    color: "#333",
+    textAlign: "center",
+    borderBottomWidth: 2,
+    borderBottomColor: "#F5A623",
+    paddingVertical: 8,
+    minWidth: 120,
+  },
+  unitToggleRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  unitToggle: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: "#ddd",
+    backgroundColor: "#fafafa",
+  },
+  unitToggleActive: {
+    borderColor: "#F5A623",
+    backgroundColor: "#F5A623",
+  },
+  unitToggleText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#666",
+  },
+  unitToggleTextActive: {
+    color: "#fff",
+  },
+  section: {
+    gap: 12,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#374151",
+    marginBottom: 8,
+  },
+  emptyMessagesContainer: {
+    marginTop: 16,
+    gap: 8,
+  },
+  emptyMessage: {
+    fontSize: 14,
+    color: "#999",
+    textAlign: "center",
+    fontStyle: "italic",
+  },
+  addButtonsRow: {
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "space-between",
+  },
+  addBtnSmall: {
+    flex: 1,
+    paddingVertical: 10,
+    borderWidth: 1.5,
+    borderColor: "#F5A623",
+    borderRadius: 12,
+    borderStyle: "dashed",
+    alignItems: "center",
+  },
+  addBtnSmallText: {
+    fontSize: 14,
+    color: "#F5A623",
+    fontWeight: "600",
+  },
+  addBtnDisabled: {
+    borderColor: "#ccc",
+    backgroundColor: "#f9f9f9",
+  },
+  addBtnDisabledText: {
+    color: "#999",
+  },
+  emptyCard: {
+    backgroundColor: "#f0f0f0",
+    borderRadius: 14,
+    padding: 20,
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 14,
+    color: "#999",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+});
