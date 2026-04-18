@@ -1,5 +1,7 @@
 // components/calculator/CountPicker.tsx
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Platform, Pressable, Text, TextInput, View } from "react-native";
+
+const isWeb = Platform.OS === 'web';
 
 interface CountPickerProps {
   value: number;
@@ -9,14 +11,14 @@ interface CountPickerProps {
 }
 
 export default function CountPicker({ value, onChange, alignItems = 'center', compact = false }: CountPickerProps) {
-  const btnPadH = compact ? 14 : 20;
-  const btnPadV = compact ? 8 : 14;
-  const fontSize = compact ? 24 : 35;
-  const inputFontSize = compact ? 16 : 20;
-  const inputMinWidth = compact ? 44 : 64;
-  const inputPadV = compact ? 8 : 14;
+  const btnPadH = compact ? 14 : isWeb ? 16 : 20;
+  const btnPadV = compact ? 8 : isWeb ? 10 : 14;
+  const fontSize = compact ? 24 : isWeb ? 24 : 35;
+  const inputFontSize = compact ? 16 : isWeb ? 16 : 20;
+  const inputMinWidth = compact ? 44 : isWeb ? 48 : 64;
+  const inputPadV = compact ? 8 : isWeb ? 10 : 14;
   const borderRadius = compact ? 10 : 12;
-  const dividerH = compact ? 22 : 28;
+  const dividerH = compact ? 22 : isWeb ? 22 : 28;
 
   return (
     <View style={{ gap: 12, alignItems }}>
@@ -37,6 +39,8 @@ export default function CountPicker({ value, onChange, alignItems = 'center', co
             paddingHorizontal: btnPadH,
             paddingVertical: btnPadV,
             backgroundColor: pressed ? '#E5E7EB' : 'transparent',
+            // Evita el delay de 300ms en navegadores móviles
+            ...(isWeb && { cursor: 'pointer' } as any),
           })}
         >
           <Text style={{ fontSize, fontWeight: '300', color: '#374151' }}> − </Text>
@@ -62,6 +66,8 @@ export default function CountPicker({ value, onChange, alignItems = 'center', co
             paddingVertical: inputPadV,
             paddingHorizontal: 8,
             backgroundColor: '#FFFFFF',
+            // Evita el zoom automático de Safari en inputs en iOS
+            ...(isWeb && { fontSize: Math.max(inputFontSize, 16) } as any),
           }}
         />
 
@@ -73,6 +79,7 @@ export default function CountPicker({ value, onChange, alignItems = 'center', co
             paddingHorizontal: btnPadH,
             paddingVertical: btnPadV,
             backgroundColor: pressed ? '#E5E7EB' : 'transparent',
+            ...(isWeb && { cursor: 'pointer' } as any),
           })}
         >
           <Text style={{ fontSize, fontWeight: '300', color: '#374151' }}> + </Text>
