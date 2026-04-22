@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useImperativeHandle,
   useRef,
+  useState,
 } from "react";
 import {
   ImageBackground,
@@ -60,7 +61,21 @@ const ANIM_DURATION = 300;
 
 const StepContainer = forwardRef<StepContainerRef, Props>(
   ({ steps, currentStep, direction, onBack, onInfo }, ref) => {
-    const { height } = useWindowDimensions();
+    const { height: windowHeight } = useWindowDimensions();
+    // useWindowDimensions returns 0 during static-export hydration on web.
+    // Fall back to window.innerHeight so the card content isn't height:0 on
+    // direct loads / refreshes of the Vercel-hosted PWA.
+    const [height, setHeight] = useState(() => {
+      if (Platform.OS === "web" && typeof window !== "undefined" && window.innerHeight > 0) {
+        return window.innerHeight;
+      }
+      return windowHeight;
+    });
+
+    useEffect(() => {
+      if (windowHeight > 0) setHeight(windowHeight);
+    }, [windowHeight]);
+
     const insets = useSafeAreaInsets();
     const step = steps[currentStep];
     const scrollRef = useRef<ScrollView>(null);
