@@ -5,8 +5,8 @@ import {
 } from "@react-navigation/native";
 import { Slot } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
 import { Platform } from "react-native";
+import { useState } from "react";
 import "react-native-reanimated";
 import "../global.css";
 
@@ -16,17 +16,16 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 
 const DISCLAIMER_KEY = "disclaimerAccepted";
 
+function readAccepted(): boolean {
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    return localStorage.getItem(DISCLAIMER_KEY) === "true";
+  }
+  return false;
+}
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const [accepted, setAccepted] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    if (Platform.OS === "web" && typeof window !== "undefined") {
-      setAccepted(localStorage.getItem(DISCLAIMER_KEY) === "true");
-    }
-    setMounted(true);
-  }, []);
+  const [accepted, setAccepted] = useState(readAccepted);
 
   const handleAccept = () => {
     if (Platform.OS === "web" && typeof window !== "undefined") {
@@ -40,7 +39,7 @@ export default function RootLayout() {
       <CalculatorProvider>
         <Slot />
         <StatusBar style="auto" />
-        {mounted && !accepted && <DisclaimerGate onAccept={handleAccept} />} // 👈
+        {!accepted && <DisclaimerGate onAccept={handleAccept} />}
       </CalculatorProvider>
     </ThemeProvider>
   );
