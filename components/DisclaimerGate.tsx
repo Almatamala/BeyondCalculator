@@ -1,6 +1,7 @@
 import { Image } from "expo-image";
 import React, { useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Animated,
   StyleSheet,
   Text,
@@ -9,26 +10,58 @@ import {
 } from "react-native";
 
 interface Props {
-  onAccept: () => void;
+  onConfirmAge?: () => void;
+  mode?: "gate" | "checking";
 }
 
-export default function DisclaimerGate({ onAccept }: Props) {
-  const [denied, setDenied] = useState(false);
+export default function DisclaimerGate({ onConfirmAge, mode = "gate" }: Props) {
+  const [accessDenied, setAccessDenied] = useState(false);
   const translateY = useRef(new Animated.Value(0)).current;
 
-  const handleAccept = () => {
+  if (mode === "checking") {
+    return (
+      <View style={styles.overlay} pointerEvents="none">
+        <View style={styles.checkingContainer}>
+          <Image
+            source={require("@/assets/images/icon.png")}
+            style={styles.logo}
+            contentFit="contain"
+          />
+          <View style={styles.badgeRow}>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>+18</Text>
+            </View>
+          </View>
+          <Text style={styles.title}>Control de carnets ultra serio</Text>
+          <Text style={styles.checkingSubtitle}>
+            Comprobando que tienes edad para usar la app. Prometemos no pedir
+            foto del carnet ni llamar a tu tio favorito.
+          </Text>
+          <View style={styles.spinnerCard}>
+            <ActivityIndicator size="large" color="#F5A623" />
+            <Text style={styles.spinnerText}>Validando mayoria de edad...</Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  const handleAgeConfirmation = () => {
     Animated.timing(translateY, {
       toValue: -900,
       duration: 420,
       useNativeDriver: true,
-    }).start(onAccept);
+    }).start(() => onConfirmAge?.());
   };
 
-  const handleDeny = () => setDenied(true);
+  const handleMinorDecline = () => setAccessDenied(true);
 
   return (
-    <Animated.View style={[styles.overlay, { transform: [{ translateY }] }]} pointerEvents="auto">
-      {denied ? (
+    <Animated.View
+      style={[styles.overlay, { transform: [{ translateY }] }]}
+      pointerEvents="auto"
+    >
+      {accessDenied ? (
         <View style={styles.deniedContainer}>
           <Text style={styles.deniedEmoji}>🚫</Text>
           <Text style={styles.deniedTitle}>Acceso restringido</Text>
@@ -37,7 +70,7 @@ export default function DisclaimerGate({ onAccept }: Props) {
           </Text>
           <TouchableOpacity
             style={styles.btnBack}
-            onPress={() => setDenied(false)}
+            onPress={() => setAccessDenied(false)}
             activeOpacity={0.8}
           >
             <Text style={styles.btnBackText}>← Volver</Text>
@@ -74,14 +107,14 @@ export default function DisclaimerGate({ onAccept }: Props) {
             <Text style={styles.question}>¿Eres mayor de 18 años?</Text>
             <TouchableOpacity
               style={styles.btnAccept}
-              onPress={handleAccept}
+              onPress={handleAgeConfirmation}
               activeOpacity={0.85}
             >
               <Text style={styles.btnAcceptText}>Sí, tengo 18 años o más</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.btnDeny}
-              onPress={handleDeny}
+              onPress={handleMinorDecline}
               activeOpacity={0.85}
             >
               <Text style={styles.btnDenyText}>No, soy menor de edad</Text>
@@ -208,6 +241,38 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 32,
     gap: 16,
+  },
+  checkingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 28,
+    gap: 14,
+  },
+  checkingSubtitle: {
+    fontSize: 15,
+    color: "#555",
+    textAlign: "center",
+    lineHeight: 22,
+    maxWidth: 360,
+  },
+  spinnerCard: {
+    marginTop: 8,
+    minWidth: 240,
+    borderRadius: 18,
+    paddingHorizontal: 24,
+    paddingVertical: 18,
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: "#FFF7E8",
+    borderWidth: 1,
+    borderColor: "#F7D18B",
+  },
+  spinnerText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#8A5A00",
+    textAlign: "center",
   },
   deniedEmoji: {
     fontSize: 56,
